@@ -59,7 +59,12 @@ Die App fokussiert sich auf:
 - optional: alle archivierten Einträge endgültig löschen
 - endgültig gelöschte Einträge werden auch aus Statistiken entfernt
 
-### 6) Siri / App Intents
+### 6) JSON-Backup
+- Einstellungen im Statistik-Tab über den Gear-Button
+- Aktion `Backup laden` erstellt ein JSON-Backup aller Einträge
+- Speichern direkt über die iOS-Dateienauswahl (Dateien-App)
+
+### 7) Siri / App Intents
 - AppIntents für schnelles Anlegen per Siri/Shortcuts:
   - `Schuldeneintrag (Ich schulde)`
   - `Schuldeneintrag (Ich bekomme)`
@@ -67,7 +72,7 @@ Die App fokussiert sich auf:
   - „Ich schulde in Finance"
   - „Ich bekomme in Finance"
 
-### 7) Erinnerungen
+### 8) Erinnerungen
 - Benachrichtigungsberechtigung beim App-Start
 - wiederkehrende Erinnerung um 20:00 Uhr (falls erlaubt)
 
@@ -118,6 +123,11 @@ Die App fokussiert sich auf:
 1. In `Statistiken` auf `Statistik-Daten bereinigen`
 2. Einträge einzeln oder archivierte gesammelt endgültig löschen
 
+### JSON-Backup speichern
+1. In `Statistiken` auf das Einstellungen-Symbol tippen
+2. `Backup laden` wählen
+3. Speicherort in der Dateien-App auswählen und sichern
+
 ## Datenmodell (Core Data)
 Entity: `Item`
 - `timestamp: Date`
@@ -140,6 +150,11 @@ Finance/
 │   ├── Debts/
 │   │   └── Services/
 │   │       └── DebtEntryCreationService.swift
+│   ├── Backup/
+│   │   ├── Models/
+│   │   │   └── FinanceBackupModels.swift
+│   │   └── Services/
+│   │       └── FinanceBackupService.swift
 │   └── Statistics/
 │       ├── Models/
 │       │   └── StatisticsModels.swift
@@ -149,6 +164,7 @@ Finance/
 │           ├── Components/
 │           │   └── StatisticsCards.swift
 │           ├── StatisticsDataManagementView.swift
+│           ├── StatisticsSettingsView.swift
 │           └── StatisticsView.swift
 ├── Views/
 │   ├── DebtsView.swift
@@ -172,12 +188,6 @@ Finance/
 - Siri in iOS aktiviert lassen und Gerät neu starten, falls Shortcuts nicht sofort erscheinen
 
 ## Roadmap-Ideen
-- Export/Backup (z. B. JSON/CSV)
 - Filter und Suche in der Schuldenliste
 - FaceID/Passcode-Schutz
 - Wiederkehrende Einträge
-
----
-
-built by Lukas
-~ new repo to remove privacy Date
