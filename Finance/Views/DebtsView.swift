@@ -7,20 +7,6 @@
 import SwiftUI
 import CoreData
 
-private struct PartialPayment: Codable, Identifiable {
-    let id: UUID
-    let amount: Double
-    let timestamp: Date
-    var note: String?
-
-    init(id: UUID = UUID(), amount: Double, timestamp: Date = Date(), note: String? = nil) {
-        self.id = id
-        self.amount = amount
-        self.timestamp = timestamp
-        self.note = note
-    }
-}
-
 private enum EntryAlert {
     case editAmount
     case addPartialPayment
@@ -52,32 +38,40 @@ struct DebtsView: View {
     @State private var expandedRows: Set<NSManagedObjectID> = []
 
     var body: some View {
-        List {
-            ForEach(items) { item in
-                debtCard(for: item)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        archiveItem(item)
-                    } label: {
-                        Label("Archivieren", systemImage: "archivebox.fill")
+        Group {
+            if items.isEmpty {
+                DebtsEmptyStateView {
+                    showSheet = true
+                }
+            } else {
+                List {
+                    ForEach(items) { item in
+                        debtCard(for: item)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                archiveItem(item)
+                            } label: {
+                                Label("Archivieren", systemImage: "archivebox.fill")
+                            }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            Button {
+                                startEditingAmount(for: item)
+                            } label: {
+                                Label("Bearbeiten", systemImage: "pencil")
+                            }
+                            .tint(.blue)
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
                 }
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    Button {
-                        startEditingAmount(for: item)
-                    } label: {
-                        Label("Bearbeiten", systemImage: "pencil")
-                    }
-                    .tint(.blue)
-                }
-                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
+                .padding()
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
         }
-        .padding()
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
         .background(
             Color(.systemBackground)
                 .ignoresSafeArea()
@@ -210,42 +204,16 @@ struct DebtsView: View {
                     if isExpanded {
                         VStack(spacing: 8) {
                             ForEach(payments) { payment in
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack {
-                                        Label("\(String(format: "%.2f", payment.amount))€", systemImage: "eurosign.circle")
-                                            .font(.subheadline.weight(.medium))
-                                        Spacer()
-                                        Text(formattedDate(timestamp: payment.timestamp))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Button {
-                                            startEditingPartialPaymentNote(for: payment, in: item)
-                                        } label: {
-                                            Image(systemName: payment.note?.isEmpty == false ? "note.text" : "square.and.pencil")
-                                                .font(.subheadline.weight(.semibold))
-                                                .foregroundStyle(payment.note?.isEmpty == false ? .blue : .secondary)
-                                                .frame(width: 24, height: 24)
-                                                .contentShape(Rectangle())
-                                        }
-                                        .buttonStyle(.borderless)
-                                        Button(role: .destructive) {
-                                            startDeletingPartialPayment(payment, in: item)
-                                        } label: {
-                                            Image(systemName: "trash")
-                                                .font(.subheadline.weight(.semibold))
-                                                .frame(width: 24, height: 24)
-                                                .contentShape(Rectangle())
-                                        }
-                                        .buttonStyle(.borderless)
+                                PartialPaymentRowView(
+                                    payment: payment,
+                                    dateText: formattedDate(timestamp: payment.timestamp),
+                                    onEditNote: {
+                                        startEditingPartialPaymentNote(for: payment, in: item)
+                                    },
+                                    onDelete: {
+                                        startDeletingPartialPayment(payment, in: item)
                                     }
-
-                                    if let note = payment.note, !note.isEmpty {
-                                        Label(note, systemImage: "text.bubble")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                .padding(.vertical, 4)
+                                )
                             }
                         }
                         .padding(.top, 4)
