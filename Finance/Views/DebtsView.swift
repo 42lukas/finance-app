@@ -25,6 +25,7 @@ private enum EntryAlert {
     case editAmount
     case addPartialPayment
     case editPartialPaymentNote
+    case confirmDeletePartialPayment
 }
 
 struct DebtsView: View {
@@ -45,6 +46,8 @@ struct DebtsView: View {
     @State private var itemForPartialPaymentNote: Item?
     @State private var partialPaymentToEditNote: PartialPayment?
     @State private var partialPaymentNoteText: String = ""
+    @State private var itemForPartialPaymentDeletion: Item?
+    @State private var partialPaymentToDelete: PartialPayment?
     @State private var activeAlert: EntryAlert?
     @State private var expandedRows: Set<NSManagedObjectID> = []
 
@@ -102,12 +105,18 @@ struct DebtsView: View {
             } else if activeAlert == .addPartialPayment {
                 TextField("Teilzahlung in €", text: $partialPaymentAmountText)
                     .keyboardType(.decimalPad)
-            } else {
+            } else if activeAlert == .editPartialPaymentNote {
                 TextField("Kleine Notiz", text: $partialPaymentNoteText)
             }
             Button("Abbrechen", role: .cancel) {}
-            Button("Speichern") {
-                handleAlertSave()
+            if activeAlert == .confirmDeletePartialPayment {
+                Button("Löschen", role: .destructive) {
+                    deletePartialPayment()
+                }
+            } else {
+                Button("Speichern") {
+                    handleAlertSave()
+                }
             }
         } message: {
             Text(alertMessage())
@@ -219,6 +228,15 @@ struct DebtsView: View {
                                                 .contentShape(Rectangle())
                                         }
                                         .buttonStyle(.borderless)
+                                        Button(role: .destructive) {
+                                            startDeletingPartialPayment(payment, in: item)
+                                        } label: {
+                                            Image(systemName: "trash")
+                                                .font(.subheadline.weight(.semibold))
+                                                .frame(width: 24, height: 24)
+                                                .contentShape(Rectangle())
+                                        }
+                                        .buttonStyle(.borderless)
                                     }
 
                                     if let note = payment.note, !note.isEmpty {
@@ -305,7 +323,6 @@ struct DebtsView: View {
         var payments = partialPayments(for: item)
         payments.append(PartialPayment(amount: amountToApply))
         savePartialPayments(payments, for: item)
-        item.paidAmount = min(item.paidAmount + amountToApply, item.amount)
 
         withAnimation {
             do {
@@ -322,6 +339,32 @@ struct DebtsView: View {
         partialPaymentToEditNote = payment
         partialPaymentNoteText = payment.note ?? ""
         activeAlert = .editPartialPaymentNote
+    }
+
+    private func startDeletingPartialPayment(_ payment: PartialPayment, in item: Item) {
+        itemForPartialPaymentDeletion = item
+        partialPaymentToDelete = payment
+        activeAlert = .confirmDeletePartialPayment
+    }
+
+    private func deletePartialPayment() {
+        guard let item = itemForPartialPaymentDeletion, let payment = partialPaymentToDelete else { return }
+
+        var payments = partialPayments(for: item)
+        payments.removeAll { $0.id == payment.id }
+        savePartialPayments(payments, for: item)
+
+        withAnimation {
+            do {
+                try viewContext.save()
+            } catch {
+                let nsError = error as NSError
+                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+            }
+        }
+
+        resetPartialPaymentDeleteState()
+        activeAlert = nil
     }
 
     private func savePartialPaymentNote() {
@@ -414,6 +457,9 @@ struct DebtsView: View {
     }
 
     private func savePartialPayments(_ payments: [PartialPayment], for item: Item) {
+        let totalPaid = payments.reduce(0) { $0 + max($1.amount, 0) }
+        item.paidAmount = min(totalPaid, max(item.amount, 0))
+
         do {
             item.partialPaymentsData = try JSONEncoder().encode(payments)
         } catch {
@@ -447,6 +493,8 @@ struct DebtsView: View {
             return "Teilzahlung hinzufügen"
         case .editPartialPaymentNote:
             return "Notiz zur Teilzahlung"
+        case .confirmDeletePartialPayment:
+            return "Teileintrag löschen?"
         case .none:
             return ""
         }
@@ -460,6 +508,8 @@ struct DebtsView: View {
             return partialPaymentMessage()
         case .editPartialPaymentNote:
             return "Optional, z. B. Verwendungszweck oder Kontext."
+        case .confirmDeletePartialPayment:
+            return "Bist du sicher, dass du den Eintrag löschen willst?"
         case .none:
             return ""
         }
@@ -473,6 +523,8 @@ struct DebtsView: View {
             savePartialPayment()
         case .editPartialPaymentNote:
             savePartialPaymentNote()
+        case .confirmDeletePartialPayment:
+            break
         case .none:
             break
         }
@@ -485,6 +537,8 @@ struct DebtsView: View {
             if !isPresented {
                 if activeAlert == .editPartialPaymentNote {
                     resetPartialPaymentNoteState()
+                } else if activeAlert == .confirmDeletePartialPayment {
+                    resetPartialPaymentDeleteState()
                 }
                 activeAlert = nil
             }
@@ -495,6 +549,11 @@ struct DebtsView: View {
         itemForPartialPaymentNote = nil
         partialPaymentToEditNote = nil
         partialPaymentNoteText = ""
+    }
+
+    private func resetPartialPaymentDeleteState() {
+        itemForPartialPaymentDeletion = nil
+        partialPaymentToDelete = nil
     }
 
     func formattedDate(timestamp: Date?) -> String {
