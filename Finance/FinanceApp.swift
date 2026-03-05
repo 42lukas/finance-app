@@ -12,6 +12,7 @@ import AppIntents
 struct FinanceApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     let persistenceController = PersistenceController.shared
+    @StateObject private var themeManager = ThemeManager()
 
     init() {
         FinanceAppShortcuts.updateAppShortcutParameters()
@@ -21,6 +22,8 @@ struct FinanceApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(themeManager)
+                .preferredColorScheme(themeManager.selectedTheme.colorScheme)
         }
     }
 }

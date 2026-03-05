@@ -65,7 +65,12 @@ Die App fokussiert sich auf:
 - Aktion `Backup laden` erstellt ein JSON-Backup aller Einträge
 - Speichern direkt über die iOS-Dateienauswahl (Dateien-App)
 
-### 7) Siri / App Intents
+### 7) Dark Mode / Appearance
+- globales Theme-System: `System`, `Hell`, `Dunkel`
+- umschaltbar in den Einstellungen im Statistik-Tab
+- Auswahl wirkt app-weit und gilt auch für neue Views
+
+### 8) Siri / App Intents
 - AppIntents für schnelles Anlegen per Siri/Shortcuts:
   - `Schuldeneintrag (Ich schulde)`
   - `Schuldeneintrag (Ich bekomme)`
@@ -73,7 +78,7 @@ Die App fokussiert sich auf:
   - „Ich schulde in Finance"
   - „Ich bekomme in Finance"
 
-### 8) Erinnerungen
+### 9) Erinnerungen
 - Benachrichtigungsberechtigung beim App-Start
 - wiederkehrende Erinnerung um 20:00 Uhr (falls erlaubt)
 

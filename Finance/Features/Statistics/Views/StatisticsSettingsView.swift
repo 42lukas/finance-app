@@ -8,6 +8,8 @@ import SwiftUI
 import CoreData
 
 struct StatisticsSettingsView: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
         animation: .default
@@ -22,6 +24,10 @@ struct StatisticsSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                StatisticsSectionCard(title: "Darstellung", subtitle: "System, Hell oder Dunkel") {
+                    AppThemePickerView(selectedTheme: $themeManager.selectedTheme)
+                }
+
                 StatisticsSectionCard(title: "Backup", subtitle: "JSON lokal in Dateien sichern") {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("\(items.count) Einträge werden in eine JSON-Datei exportiert.", systemImage: "doc.text.fill")
