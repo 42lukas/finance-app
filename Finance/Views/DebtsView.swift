@@ -11,17 +11,20 @@ private struct PartialPayment: Codable, Identifiable {
     let id: UUID
     let amount: Double
     let timestamp: Date
+    var note: String?
 
-    init(id: UUID = UUID(), amount: Double, timestamp: Date = Date()) {
+    init(id: UUID = UUID(), amount: Double, timestamp: Date = Date(), note: String? = nil) {
         self.id = id
         self.amount = amount
         self.timestamp = timestamp
+        self.note = note
     }
 }
 
 private enum EntryAlert {
     case editAmount
     case addPartialPayment
+    case editPartialPaymentNote
 }
 
 struct DebtsView: View {
@@ -39,6 +42,9 @@ struct DebtsView: View {
     @State private var editedAmountText: String = ""
     @State private var itemForPartialPayment: Item?
     @State private var partialPaymentAmountText: String = ""
+    @State private var itemForPartialPaymentNote: Item?
+    @State private var partialPaymentToEditNote: PartialPayment?
+    @State private var partialPaymentNoteText: String = ""
     @State private var activeAlert: EntryAlert?
     @State private var expandedRows: Set<NSManagedObjectID> = []
 
@@ -93,24 +99,18 @@ struct DebtsView: View {
             if activeAlert == .editAmount {
                 TextField("Betrag in €", text: $editedAmountText)
                     .keyboardType(.decimalPad)
-            } else {
+            } else if activeAlert == .addPartialPayment {
                 TextField("Teilzahlung in €", text: $partialPaymentAmountText)
                     .keyboardType(.decimalPad)
+            } else {
+                TextField("Kleine Notiz", text: $partialPaymentNoteText)
             }
             Button("Abbrechen", role: .cancel) {}
             Button("Speichern") {
-                if activeAlert == .editAmount {
-                    saveEditedAmount()
-                } else {
-                    savePartialPayment()
-                }
+                handleAlertSave()
             }
         } message: {
-            if activeAlert == .editAmount {
-                Text("Bitte neuen Betrag eingeben.")
-            } else {
-                Text(partialPaymentMessage())
-            }
+            Text(alertMessage())
         }
     }
 
@@ -201,13 +201,31 @@ struct DebtsView: View {
                     if isExpanded {
                         VStack(spacing: 8) {
                             ForEach(payments) { payment in
-                                HStack {
-                                    Label("\(String(format: "%.2f", payment.amount))€", systemImage: "eurosign.circle")
-                                        .font(.subheadline.weight(.medium))
-                                    Spacer()
-                                    Text(formattedDate(timestamp: payment.timestamp))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Label("\(String(format: "%.2f", payment.amount))€", systemImage: "eurosign.circle")
+                                            .font(.subheadline.weight(.medium))
+                                        Spacer()
+                                        Text(formattedDate(timestamp: payment.timestamp))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Button {
+                                            startEditingPartialPaymentNote(for: payment, in: item)
+                                        } label: {
+                                            Image(systemName: payment.note?.isEmpty == false ? "note.text" : "square.and.pencil")
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundStyle(payment.note?.isEmpty == false ? .blue : .secondary)
+                                                .frame(width: 24, height: 24)
+                                                .contentShape(Rectangle())
+                                        }
+                                        .buttonStyle(.borderless)
+                                    }
+
+                                    if let note = payment.note, !note.isEmpty {
+                                        Label(note, systemImage: "text.bubble")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                                 .padding(.vertical, 4)
                             }
@@ -299,6 +317,41 @@ struct DebtsView: View {
         }
     }
 
+    private func startEditingPartialPaymentNote(for payment: PartialPayment, in item: Item) {
+        itemForPartialPaymentNote = item
+        partialPaymentToEditNote = payment
+        partialPaymentNoteText = payment.note ?? ""
+        activeAlert = .editPartialPaymentNote
+    }
+
+    private func savePartialPaymentNote() {
+        guard let item = itemForPartialPaymentNote, let payment = partialPaymentToEditNote else { return }
+
+        var payments = partialPayments(for: item)
+        guard let index = payments.firstIndex(where: { $0.id == payment.id }) else {
+            resetPartialPaymentNoteState()
+            return
+        }
+
+        let normalizedNote = partialPaymentNoteText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        payments[index].note = normalizedNote.isEmpty ? nil : normalizedNote
+        savePartialPayments(payments, for: item)
+
+        withAnimation {
+            do {
+                try viewContext.save()
+            } catch {
+                let nsError = error as NSError
+                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+            }
+        }
+
+        resetPartialPaymentNoteState()
+        activeAlert = nil
+    }
+
     private func amountChip(title: String, amount: Double, color: Color, systemImage: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Label(title, systemImage: systemImage)
@@ -387,7 +440,42 @@ struct DebtsView: View {
     }
 
     private func alertTitle() -> String {
-        activeAlert == .editAmount ? "Betrag bearbeiten" : "Teilzahlung hinzufügen"
+        switch activeAlert {
+        case .editAmount:
+            return "Betrag bearbeiten"
+        case .addPartialPayment:
+            return "Teilzahlung hinzufügen"
+        case .editPartialPaymentNote:
+            return "Notiz zur Teilzahlung"
+        case .none:
+            return ""
+        }
+    }
+
+    private func alertMessage() -> String {
+        switch activeAlert {
+        case .editAmount:
+            return "Bitte neuen Betrag eingeben."
+        case .addPartialPayment:
+            return partialPaymentMessage()
+        case .editPartialPaymentNote:
+            return "Optional, z. B. Verwendungszweck oder Kontext."
+        case .none:
+            return ""
+        }
+    }
+
+    private func handleAlertSave() {
+        switch activeAlert {
+        case .editAmount:
+            saveEditedAmount()
+        case .addPartialPayment:
+            savePartialPayment()
+        case .editPartialPaymentNote:
+            savePartialPaymentNote()
+        case .none:
+            break
+        }
     }
 
     private func isAlertPresentedBinding() -> Binding<Bool> {
@@ -395,9 +483,18 @@ struct DebtsView: View {
             activeAlert != nil
         } set: { isPresented in
             if !isPresented {
+                if activeAlert == .editPartialPaymentNote {
+                    resetPartialPaymentNoteState()
+                }
                 activeAlert = nil
             }
         }
+    }
+
+    private func resetPartialPaymentNoteState() {
+        itemForPartialPaymentNote = nil
+        partialPaymentToEditNote = nil
+        partialPaymentNoteText = ""
     }
 
     func formattedDate(timestamp: Date?) -> String {

@@ -30,6 +30,7 @@ Die App fokussiert sich auf:
   - bereits bezahlt
   - offen
 - Teilzahlungen nur über den Button `Teilzahlung hinzufügen`
+- optionale kurze Notiz pro Teilzahlung über ein Notiz-Icon in der Historie
 - Teilzahlungshistorie mit Datum/Uhrzeit pro Zahlung
 - Ausklappen der Historie nur über Chevron-Button
 - visuelles „Komplett bezahlt“-Banner, wenn offen = 0

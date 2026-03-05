@@ -30,6 +30,7 @@ struct FinanceBackupPartialPayment: Codable {
     let id: UUID
     let amount: Double
     let timestamp: Date
+    let note: String?
 }
 
 struct FinanceBackupDocument: FileDocument {
