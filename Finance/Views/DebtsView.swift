@@ -259,7 +259,7 @@ struct DebtsView: View {
 
     private func startEditingAmount(for item: Item) {
         itemToEdit = item
-        editedAmountText = String(format: "%.2f", item.amount)
+        editedAmountText = ""
         activeAlert = .editAmount
     }
 
@@ -285,7 +285,7 @@ struct DebtsView: View {
 
     private func startAddingPartialPayment(for item: Item) {
         itemForPartialPayment = item
-        partialPaymentAmountText = String(format: "%.2f", remainingAmount(for: item))
+        partialPaymentAmountText = ""
         activeAlert = .addPartialPayment
     }
 
