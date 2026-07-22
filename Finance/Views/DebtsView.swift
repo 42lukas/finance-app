@@ -37,40 +37,59 @@ struct DebtsView: View {
     @State private var activeAlert: EntryAlert?
     @State private var expandedRows: Set<NSManagedObjectID> = []
 
+    private var currentDebtTotal: Double {
+        items
+            .filter { $0.category == "schulde ich" }
+            .reduce(0) { $0 + remainingAmount(for: $1) }
+    }
+
+    private var currentReceivableTotal: Double {
+        items
+            .filter { $0.category == "bekomme ich" }
+            .reduce(0) { $0 + remainingAmount(for: $1) }
+    }
+
     var body: some View {
-        Group {
-            if items.isEmpty {
-                DebtsEmptyStateView {
-                    showSheet = true
-                }
-            } else {
-                List {
-                    ForEach(items) { item in
-                        debtCard(for: item)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                archiveItem(item)
-                            } label: {
-                                Label("Archivieren", systemImage: "archivebox.fill")
-                            }
-                        }
-                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                            Button {
-                                startEditingAmount(for: item)
-                            } label: {
-                                Label("Bearbeiten", systemImage: "pencil")
-                            }
-                            .tint(.blue)
-                        }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
+        VStack(spacing: 12) {
+            currentBalanceSummary
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+
+            Group {
+                if items.isEmpty {
+                    DebtsEmptyStateView {
+                        showSheet = true
                     }
+                } else {
+                    List {
+                        ForEach(items) { item in
+                            debtCard(for: item)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    archiveItem(item)
+                                } label: {
+                                    Label("Archivieren", systemImage: "archivebox.fill")
+                                }
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                Button {
+                                    startEditingAmount(for: item)
+                                } label: {
+                                    Label("Bearbeiten", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+                            }
+                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
-                .padding()
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(
             Color(.systemBackground)
@@ -115,6 +134,56 @@ struct DebtsView: View {
         } message: {
             Text(alertMessage())
         }
+    }
+
+    private var currentBalanceSummary: some View {
+        HStack(spacing: 10) {
+            balanceSummaryCard(
+                title: "Aktuelle Schulden",
+                amount: currentDebtTotal,
+                color: .red,
+                systemImage: "arrow.up.circle.fill"
+            )
+
+            balanceSummaryCard(
+                title: "Ich bekomme",
+                amount: currentReceivableTotal,
+                color: .green,
+                systemImage: "arrow.down.circle.fill"
+            )
+        }
+    }
+
+    private func balanceSummaryCard(
+        title: String,
+        amount: Double,
+        color: Color,
+        systemImage: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.title2)
+                .foregroundStyle(color)
+
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Text(amount, format: .currency(code: "EUR"))
+                .font(.headline.weight(.bold))
+                .minimumScaleFactor(0.75)
+                .lineLimit(1)
+                .contentTransition(.numericText(value: amount))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
+        .accessibilityValue(amount.formatted(.currency(code: "EUR")))
     }
 
     @ViewBuilder
