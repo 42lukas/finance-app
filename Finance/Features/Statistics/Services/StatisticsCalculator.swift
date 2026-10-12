@@ -32,12 +32,16 @@ enum StatisticsCalculator {
                 return lhs.totalAmount > rhs.totalAmount
             }
 
+        let outstandingDebts = makeOutstandingDebts(from: filteredItems)
+
         return StatisticsSnapshot(
             summary: summary,
             topPeopleByEntries: Array(topPeopleByEntries.prefix(8)),
             topPeopleByAmount: Array(topPeopleByAmount.prefix(8)),
             timeSeries: makeTimeSeries(from: filteredItems, period: period, calendar: calendar, now: now),
-            weekdayClusters: makeWeekdayClusters(from: filteredItems, calendar: calendar)
+            weekdayClusters: makeWeekdayClusters(from: filteredItems, calendar: calendar),
+            oldestOpenDebt: outstandingDebts.min { $0.timestamp < $1.timestamp },
+            largestOpenDebt: outstandingDebts.max { $0.remainingAmount < $1.remainingAmount }
         )
     }
 
@@ -72,10 +76,16 @@ enum StatisticsCalculator {
         var receivableAmount: Double = 0
         var uniquePeople = Set<String>()
         var paidOffCount = 0
+        var paidAmount: Double = 0
+        var openOwedAmount: Double = 0
+        var openReceivableAmount: Double = 0
 
         for item in items {
             let amount = max(item.amount, 0)
+            let itemPaidAmount = effectivePaidAmount(for: item)
+            let remainingAmount = max(amount - itemPaidAmount, 0)
             totalAmount += amount
+            paidAmount += itemPaidAmount
 
             if item.category == "schulde ich" {
                 owedAmount += amount
@@ -86,8 +96,16 @@ enum StatisticsCalculator {
             let person = normalizedPerson(item.person)
             uniquePeople.insert(person)
 
-            if max(item.amount - item.paidAmount, 0) <= 0 {
+            if remainingAmount <= 0 {
                 paidOffCount += 1
+            }
+
+            if !item.isArchived {
+                if item.category == "schulde ich" {
+                    openOwedAmount += remainingAmount
+                } else {
+                    openReceivableAmount += remainingAmount
+                }
             }
         }
 
@@ -98,8 +116,43 @@ enum StatisticsCalculator {
             receivableAmount: receivableAmount,
             averageAmount: totalAmount / Double(items.count),
             uniquePersons: uniquePeople.count,
-            paidOffCount: paidOffCount
+            paidOffCount: paidOffCount,
+            paidAmount: paidAmount,
+            openOwedAmount: openOwedAmount,
+            openReceivableAmount: openReceivableAmount
         )
+    }
+
+    private static func makeOutstandingDebts(from items: [Item]) -> [OutstandingEntryInsight] {
+        items.compactMap { item in
+            guard !item.isArchived, item.category == "schulde ich" else { return nil }
+
+            let remainingAmount = max(item.amount - effectivePaidAmount(for: item), 0)
+            guard remainingAmount > 0.005 else { return nil }
+
+            let description = (item.descriptionText ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            return OutstandingEntryInsight(
+                person: normalizedPerson(item.person),
+                description: description.isEmpty ? "Ohne Beschreibung" : description,
+                timestamp: item.timestamp ?? Date(),
+                remainingAmount: remainingAmount,
+                category: item.category ?? ""
+            )
+        }
+    }
+
+    private static func effectivePaidAmount(for item: Item) -> Double {
+        let payments: [PartialPayment]
+        if let data = item.partialPaymentsData {
+            payments = (try? JSONDecoder().decode([PartialPayment].self, from: data)) ?? []
+        } else {
+            payments = []
+        }
+
+        let historyPaid = payments.reduce(0) { $0 + max($1.amount, 0) }
+        return min(max(historyPaid, max(item.paidAmount, 0)), max(item.amount, 0))
     }
 
     private static func makePeopleClusters(from items: [Item]) -> [PersonCluster] {

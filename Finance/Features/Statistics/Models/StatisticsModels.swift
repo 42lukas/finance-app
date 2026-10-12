@@ -9,7 +9,7 @@ import Foundation
 enum StatisticsPeriod: String, CaseIterable, Identifiable {
     case month = "Monat"
     case year = "Jahr"
-    case allTime = "All Time"
+    case allTime = "Gesamt"
 
     var id: String { rawValue }
 
@@ -33,6 +33,9 @@ struct StatisticsSummary {
     let averageAmount: Double
     let uniquePersons: Int
     let paidOffCount: Int
+    let paidAmount: Double
+    let openOwedAmount: Double
+    let openReceivableAmount: Double
 
     static let empty = StatisticsSummary(
         entriesCount: 0,
@@ -41,8 +44,19 @@ struct StatisticsSummary {
         receivableAmount: 0,
         averageAmount: 0,
         uniquePersons: 0,
-        paidOffCount: 0
+        paidOffCount: 0,
+        paidAmount: 0,
+        openOwedAmount: 0,
+        openReceivableAmount: 0
     )
+}
+
+struct OutstandingEntryInsight {
+    let person: String
+    let description: String
+    let timestamp: Date
+    let remainingAmount: Double
+    let category: String
 }
 
 struct PersonCluster: Identifiable {
@@ -75,4 +89,6 @@ struct StatisticsSnapshot {
     let topPeopleByAmount: [PersonCluster]
     let timeSeries: [TimeSeriesPoint]
     let weekdayClusters: [WeekdayCluster]
+    let oldestOpenDebt: OutstandingEntryInsight?
+    let largestOpenDebt: OutstandingEntryInsight?
 }

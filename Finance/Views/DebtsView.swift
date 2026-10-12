@@ -7,35 +7,20 @@
 import SwiftUI
 import CoreData
 
-private enum EntryAlert {
-    case editAmount
-    case addPartialPayment
-    case editPartialPaymentNote
-    case confirmDeletePartialPayment
-}
-
 struct DebtsView: View {
-    @Environment(\.colorScheme) var colorScheme
-    
     @Environment(\.managedObjectContext) private var viewContext
-    
+
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
         predicate: NSPredicate(format: "isArchived != YES"),
-        animation: .default)
+        animation: .default
+    )
     private var items: FetchedResults<Item>
-    @State private var showSheet: Bool = false
+
+    @State private var showSheet = false
+    @State private var showEditAmountAlert = false
     @State private var itemToEdit: Item?
-    @State private var editedAmountText: String = ""
-    @State private var itemForPartialPayment: Item?
-    @State private var partialPaymentAmountText: String = ""
-    @State private var itemForPartialPaymentNote: Item?
-    @State private var partialPaymentToEditNote: PartialPayment?
-    @State private var partialPaymentNoteText: String = ""
-    @State private var itemForPartialPaymentDeletion: Item?
-    @State private var partialPaymentToDelete: PartialPayment?
-    @State private var activeAlert: EntryAlert?
-    @State private var expandedRows: Set<NSManagedObjectID> = []
+    @State private var editedAmountText = ""
 
     private var currentDebtTotal: Double {
         items
@@ -63,7 +48,12 @@ struct DebtsView: View {
                 } else {
                     List {
                         ForEach(items) { item in
-                            debtCard(for: item)
+                            NavigationLink {
+                                DebtDetailView(item: item)
+                            } label: {
+                                debtCard(for: item)
+                            }
+                            .buttonStyle(.plain)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     archiveItem(item)
@@ -77,7 +67,7 @@ struct DebtsView: View {
                                 } label: {
                                     Label("Bearbeiten", systemImage: "pencil")
                                 }
-                                .tint(.blue)
+                                .tint(AppPalette.navy)
                             }
                             .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                             .listRowSeparator(.hidden)
@@ -91,10 +81,7 @@ struct DebtsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(
-            Color(.systemBackground)
-                .ignoresSafeArea()
-        )
+        .background(AppPalette.background.ignoresSafeArea())
         .sheet(isPresented: $showSheet) {
             SheetView(showSheet: $showSheet)
         }
@@ -104,35 +91,23 @@ struct DebtsView: View {
                     showSheet.toggle()
                 } label: {
                     Image(systemName: "plus")
-                        .foregroundStyle(colorScheme == .dark ? Color.white : Color.black)
+                        .foregroundStyle(AppPalette.emerald)
                 }
-                
             }
         }
         .navigationTitle("Schulden")
         .navigationBarTitleDisplayMode(.inline)
-        .alert(alertTitle(), isPresented: isAlertPresentedBinding()) {
-            if activeAlert == .editAmount {
-                TextField("Betrag in €", text: $editedAmountText)
-                    .keyboardType(.decimalPad)
-            } else if activeAlert == .addPartialPayment {
-                TextField("Teilzahlung in €", text: $partialPaymentAmountText)
-                    .keyboardType(.decimalPad)
-            } else if activeAlert == .editPartialPaymentNote {
-                TextField("Kleine Notiz", text: $partialPaymentNoteText)
+        .alert("Betrag bearbeiten", isPresented: $showEditAmountAlert) {
+            TextField("Betrag in €", text: $editedAmountText)
+                .keyboardType(.decimalPad)
+            Button("Abbrechen", role: .cancel) {
+                resetEditState()
             }
-            Button("Abbrechen", role: .cancel) {}
-            if activeAlert == .confirmDeletePartialPayment {
-                Button("Löschen", role: .destructive) {
-                    deletePartialPayment()
-                }
-            } else {
-                Button("Speichern") {
-                    handleAlertSave()
-                }
+            Button("Speichern") {
+                saveEditedAmount()
             }
         } message: {
-            Text(alertMessage())
+            Text("Der Gesamtbetrag kann nicht kleiner als die bereits bezahlte Summe sein.")
         }
     }
 
@@ -141,14 +116,14 @@ struct DebtsView: View {
             balanceSummaryCard(
                 title: "Aktuelle Schulden",
                 amount: currentDebtTotal,
-                color: .red,
+                color: AppPalette.navy,
                 systemImage: "arrow.up.circle.fill"
             )
 
             balanceSummaryCard(
                 title: "Ich bekomme",
                 amount: currentReceivableTotal,
-                color: .green,
+                color: AppPalette.emerald,
                 systemImage: "arrow.down.circle.fill"
             )
         }
@@ -179,7 +154,7 @@ struct DebtsView: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(AppPalette.surface)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
@@ -191,135 +166,91 @@ struct DebtsView: View {
         let totalAmount = max(item.amount, 0)
         let paidAmount = paidAmount(for: item)
         let remainingAmount = max(totalAmount - paidAmount, 0)
-        let payments = partialPayments(for: item).sorted { $0.timestamp > $1.timestamp }
-        let isExpanded = expandedRows.contains(item.objectID)
+        let categoryColor = item.category == "schulde ich" ? AppPalette.navy : AppPalette.emerald
 
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
                     Text(item.person?.isEmpty == false ? item.person! : "Ohne Person")
                         .font(.headline)
+
                     if let description = item.descriptionText, !description.isEmpty {
                         Label(description, systemImage: "note.text")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    Label(formattedDate(timestamp: item.timestamp), systemImage: "calendar")
+
+                    Label(formattedDate(item.timestamp), systemImage: "calendar")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                Spacer(minLength: 8)
+
+                Label(
+                    item.category ?? "Kategorie",
+                    systemImage: item.category == "schulde ich" ? "arrow.up.circle.fill" : "arrow.down.circle.fill"
+                )
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(item.category == "schulde ich" ? AppPalette.paleNavy : AppPalette.mint)
+                .foregroundStyle(categoryColor)
+                .clipShape(Capsule())
+            }
+
+            HStack(alignment: .firstTextBaseline) {
+                Text(totalAmount, format: .currency(code: "EUR"))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(AppPalette.navy)
+
                 Spacer()
-                Label(item.category ?? "Kategorie", systemImage: item.category == "schulde ich" ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background((item.category == "schulde ich" ? Color.red : Color.green).opacity(0.15))
-                    .foregroundStyle(item.category == "schulde ich" ? .red : .green)
-                    .clipShape(Capsule())
+
+                Label(
+                    remainingAmount <= 0 ? "Bezahlt" : "Offen",
+                    systemImage: remainingAmount <= 0 ? "checkmark.circle.fill" : "clock.fill"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(remainingAmount <= 0 ? AppPalette.emerald : AppPalette.ochre)
             }
 
-            HStack(spacing: 8) {
-                amountChip(title: "Gesamt", amount: totalAmount, color: .blue, systemImage: "sum")
-                amountChip(title: "Bezahlt", amount: paidAmount, color: .green, systemImage: "checkmark.circle.fill")
-                amountChip(title: "Offen", amount: remainingAmount, color: .orange, systemImage: "clock.fill")
-            }
+            ProgressView(value: paidAmount, total: max(totalAmount, 1))
+                .tint(AppPalette.emerald)
 
-            Button {
-                startAddingPartialPayment(for: item)
-            } label: {
-                Label("Teilzahlung hinzufügen", systemImage: "plus.circle.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.accentColor.opacity(0.15))
-                    .foregroundStyle(Color.accentColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            HStack {
+                Text("\(currency(paidAmount)) bezahlt")
+                    .foregroundStyle(AppPalette.emerald)
+                Spacer()
+                Text("\(currency(remainingAmount)) offen")
+                    .foregroundStyle(remainingAmount <= 0 ? Color.secondary : AppPalette.ochre)
             }
-            .disabled(remainingAmount <= 0)
-            .opacity(remainingAmount <= 0 ? 0.5 : 1)
-            .buttonStyle(.borderless)
-
-            if remainingAmount <= 0 {
-                paidOffBanner()
-            }
-
-            if payments.isEmpty {
-                Label("Noch keine Teilzahlungen vorhanden.", systemImage: "info.circle")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
-            } else {
-                VStack(spacing: 10) {
-                    HStack {
-                        Label("Teilzahlungen (\(payments.count))", systemImage: "list.bullet.rectangle.portrait")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Button {
-                            withAnimation(.snappy(duration: 0.24, extraBounce: 0.02)) {
-                                toggleExpansion(for: item)
-                            }
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.subheadline.weight(.bold))
-                                .foregroundStyle(.secondary)
-                                .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                                .frame(width: 30, height: 30)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.borderless)
-                    }
-
-                    if isExpanded {
-                        VStack(spacing: 8) {
-                            ForEach(payments) { payment in
-                                PartialPaymentRowView(
-                                    payment: payment,
-                                    dateText: formattedDate(timestamp: payment.timestamp),
-                                    onEditNote: {
-                                        startEditingPartialPaymentNote(for: payment, in: item)
-                                    },
-                                    onDelete: {
-                                        startDeletingPartialPayment(payment, in: item)
-                                    }
-                                )
-                            }
-                        }
-                        .padding(.top, 4)
-                        .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity))
-                    }
-                }
-            }
+            .font(.caption.weight(.medium))
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.secondarySystemBackground))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppPalette.surface)
         )
-        .animation(.snappy(duration: 0.24, extraBounce: 0.02), value: isExpanded)
+        .accessibilityElement(children: .combine)
     }
 
     private func archiveItem(_ item: Item) {
         withAnimation {
             item.isArchived = true
-            expandedRows.remove(item.objectID)
-            do {
-                try viewContext.save()
-            } catch {
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
+            saveContext()
         }
     }
 
     private func startEditingAmount(for item: Item) {
         itemToEdit = item
-        editedAmountText = ""
-        activeAlert = .editAmount
+        editedAmountText = String(format: "%.2f", item.amount)
+        showEditAmountAlert = true
     }
 
     private func saveEditedAmount() {
+        defer { resetEditState() }
         guard let item = itemToEdit else { return }
+
         let normalized = editedAmountText
             .replacingOccurrences(of: ",", with: ".")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -327,187 +258,25 @@ struct DebtsView: View {
         guard let newAmount = Double(normalized), newAmount >= 0 else { return }
 
         withAnimation {
-            // Gesamtbetrag darf nicht kleiner als bereits bezahlte Summe werden.
             item.amount = max(newAmount, paidAmount(for: item))
-            do {
-                try viewContext.save()
-            } catch {
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
+            saveContext()
         }
     }
 
-    private func startAddingPartialPayment(for item: Item) {
-        itemForPartialPayment = item
-        partialPaymentAmountText = ""
-        activeAlert = .addPartialPayment
-    }
-
-    private func savePartialPayment() {
-        guard let item = itemForPartialPayment else { return }
-
-        let normalized = partialPaymentAmountText
-            .replacingOccurrences(of: ",", with: ".")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard let enteredAmount = Double(normalized), enteredAmount > 0 else { return }
-
-        let openAmount = remainingAmount(for: item)
-        guard openAmount > 0 else { return }
-
-        let amountToApply = min(enteredAmount, openAmount)
-        var payments = partialPayments(for: item)
-        payments.append(PartialPayment(amount: amountToApply))
-        savePartialPayments(payments, for: item)
-
-        withAnimation {
-            do {
-                try viewContext.save()
-            } catch {
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-
-    private func startEditingPartialPaymentNote(for payment: PartialPayment, in item: Item) {
-        itemForPartialPaymentNote = item
-        partialPaymentToEditNote = payment
-        partialPaymentNoteText = payment.note ?? ""
-        activeAlert = .editPartialPaymentNote
-    }
-
-    private func startDeletingPartialPayment(_ payment: PartialPayment, in item: Item) {
-        itemForPartialPaymentDeletion = item
-        partialPaymentToDelete = payment
-        activeAlert = .confirmDeletePartialPayment
-    }
-
-    private func deletePartialPayment() {
-        guard let item = itemForPartialPaymentDeletion, let payment = partialPaymentToDelete else { return }
-
-        var payments = partialPayments(for: item)
-        payments.removeAll { $0.id == payment.id }
-        savePartialPayments(payments, for: item)
-
-        withAnimation {
-            do {
-                try viewContext.save()
-            } catch {
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-
-        resetPartialPaymentDeleteState()
-        activeAlert = nil
-    }
-
-    private func savePartialPaymentNote() {
-        guard let item = itemForPartialPaymentNote, let payment = partialPaymentToEditNote else { return }
-
-        var payments = partialPayments(for: item)
-        guard let index = payments.firstIndex(where: { $0.id == payment.id }) else {
-            resetPartialPaymentNoteState()
-            return
-        }
-
-        let normalizedNote = partialPaymentNoteText
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        payments[index].note = normalizedNote.isEmpty ? nil : normalizedNote
-        savePartialPayments(payments, for: item)
-
-        withAnimation {
-            do {
-                try viewContext.save()
-            } catch {
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-
-        resetPartialPaymentNoteState()
-        activeAlert = nil
-    }
-
-    private func amountChip(title: String, amount: Double, color: Color, systemImage: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Label(title, systemImage: systemImage)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text("\(String(format: "%.2f", amount))€")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(color)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(color.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    private func toggleExpansion(for item: Item) {
-        if expandedRows.contains(item.objectID) {
-            expandedRows.remove(item.objectID)
-        } else {
-            expandedRows.insert(item.objectID)
-        }
-    }
-
-    private func paidOffBanner() -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.title3)
-                .foregroundStyle(.white)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Komplett bezahlt")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white)
-                Text("Sehr stark, diese Schuld ist erledigt.")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.92))
-            }
-            Spacer()
-            Image(systemName: "sparkles")
-                .font(.headline)
-                .foregroundStyle(.white.opacity(0.95))
-        }
-        .padding(12)
-        .background(
-            LinearGradient(
-                colors: [Color.green, Color.teal],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+    private func resetEditState() {
+        itemToEdit = nil
+        editedAmountText = ""
+        showEditAmountAlert = false
     }
 
     private func partialPayments(for item: Item) -> [PartialPayment] {
         guard let data = item.partialPaymentsData else { return [] }
-        do {
-            return try JSONDecoder().decode([PartialPayment].self, from: data)
-        } catch {
-            return []
-        }
-    }
-
-    private func savePartialPayments(_ payments: [PartialPayment], for item: Item) {
-        let totalPaid = payments.reduce(0) { $0 + max($1.amount, 0) }
-        item.paidAmount = min(totalPaid, max(item.amount, 0))
-
-        do {
-            item.partialPaymentsData = try JSONEncoder().encode(payments)
-        } catch {
-            item.partialPaymentsData = nil
-        }
+        return (try? JSONDecoder().decode([PartialPayment].self, from: data)) ?? []
     }
 
     private func paidAmount(for item: Item) -> Double {
-        let historyPaid = partialPayments(for: item).reduce(0) { $0 + $1.amount }
-        let storedPaid = max(item.paidAmount, 0)
-        let effectivePaid = max(historyPaid, storedPaid)
+        let historyPaid = partialPayments(for: item).reduce(0) { $0 + max($1.amount, 0) }
+        let effectivePaid = max(historyPaid, max(item.paidAmount, 0))
         return min(effectivePaid, max(item.amount, 0))
     }
 
@@ -515,92 +284,27 @@ struct DebtsView: View {
         max(item.amount - paidAmount(for: item), 0)
     }
 
-    private func partialPaymentMessage() -> String {
-        guard let item = itemForPartialPayment else {
-            return "Bitte Betrag eingeben."
-        }
-        return "Offen aktuell: \(String(format: "%.2f", remainingAmount(for: item)))€"
-    }
-
-    private func alertTitle() -> String {
-        switch activeAlert {
-        case .editAmount:
-            return "Betrag bearbeiten"
-        case .addPartialPayment:
-            return "Teilzahlung hinzufügen"
-        case .editPartialPaymentNote:
-            return "Notiz zur Teilzahlung"
-        case .confirmDeletePartialPayment:
-            return "Teileintrag löschen?"
-        case .none:
-            return ""
+    private func saveContext() {
+        do {
+            try viewContext.save()
+        } catch {
+            let nsError = error as NSError
+            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
         }
     }
 
-    private func alertMessage() -> String {
-        switch activeAlert {
-        case .editAmount:
-            return "Bitte neuen Betrag eingeben."
-        case .addPartialPayment:
-            return partialPaymentMessage()
-        case .editPartialPaymentNote:
-            return "Optional, z. B. Verwendungszweck oder Kontext."
-        case .confirmDeletePartialPayment:
-            return "Bist du sicher, dass du den Eintrag löschen willst?"
-        case .none:
-            return ""
-        }
-    }
-
-    private func handleAlertSave() {
-        switch activeAlert {
-        case .editAmount:
-            saveEditedAmount()
-        case .addPartialPayment:
-            savePartialPayment()
-        case .editPartialPaymentNote:
-            savePartialPaymentNote()
-        case .confirmDeletePartialPayment:
-            break
-        case .none:
-            break
-        }
-    }
-
-    private func isAlertPresentedBinding() -> Binding<Bool> {
-        Binding {
-            activeAlert != nil
-        } set: { isPresented in
-            if !isPresented {
-                if activeAlert == .editPartialPaymentNote {
-                    resetPartialPaymentNoteState()
-                } else if activeAlert == .confirmDeletePartialPayment {
-                    resetPartialPaymentDeleteState()
-                }
-                activeAlert = nil
-            }
-        }
-    }
-
-    private func resetPartialPaymentNoteState() {
-        itemForPartialPaymentNote = nil
-        partialPaymentToEditNote = nil
-        partialPaymentNoteText = ""
-    }
-
-    private func resetPartialPaymentDeleteState() {
-        itemForPartialPaymentDeletion = nil
-        partialPaymentToDelete = nil
-    }
-
-    func formattedDate(timestamp: Date?) -> String {
+    private func formattedDate(_ date: Date?) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM.yyyy, HH:mm" // Format: Tag.Monat.Jahr Stunde:Minute
-        return formatter.string(from: timestamp ?? Date())
+        formatter.dateFormat = "dd.MM.yyyy, HH:mm"
+        return formatter.string(from: date ?? Date())
+    }
+
+    private func currency(_ amount: Double) -> String {
+        amount.formatted(.currency(code: "EUR"))
     }
 }
 
-
 #Preview {
-    DebtsView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    DebtsView()
+        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

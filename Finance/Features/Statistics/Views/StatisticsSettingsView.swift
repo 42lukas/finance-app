@@ -41,12 +41,27 @@ struct StatisticsSettingsView: View {
                                 .font(.subheadline.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
-                                .background(Color.blue.opacity(0.15))
-                                .foregroundStyle(.blue)
+                                .background(AppPalette.mint)
+                                .foregroundStyle(AppPalette.emerald)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain)
                     }
+                }
+
+                StatisticsSectionCard(title: "Daten", subtitle: "Archivierte Statistikdaten verwalten") {
+                    NavigationLink {
+                        StatisticsDataManagementView()
+                    } label: {
+                        Label("Statistik-Daten verwalten", systemImage: "archivebox.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(AppPalette.paleNavy)
+                            .foregroundStyle(AppPalette.navy)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal)
@@ -54,7 +69,7 @@ struct StatisticsSettingsView: View {
         }
         .navigationTitle("Einstellungen")
         .navigationBarTitleDisplayMode(.inline)
-        .background(Color(.systemBackground))
+        .background(AppPalette.background)
         .fileExporter(
             isPresented: $showFileExporter,
             document: exportDocument,

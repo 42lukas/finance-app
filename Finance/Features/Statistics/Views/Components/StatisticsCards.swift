@@ -23,7 +23,7 @@ struct StatisticsMetricCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(color.opacity(0.14))
+        .background(color.opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
@@ -53,7 +53,7 @@ struct StatisticsSectionCard<Content: View>: View {
             content
         }
         .padding(14)
-        .background(Color(.secondarySystemBackground))
+        .background(AppPalette.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }

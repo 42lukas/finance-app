@@ -25,8 +25,8 @@ struct DebtsEmptyStateView: View {
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(Color.accentColor.opacity(0.15))
-                        .foregroundStyle(Color.accentColor)
+                        .background(AppPalette.mint)
+                        .foregroundStyle(AppPalette.emerald)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
@@ -45,33 +45,33 @@ struct DebtsEmptyStateView: View {
     private var skeletonDebtCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             RoundedRectangle(cornerRadius: 6)
-                .fill(Color(.systemGray5))
+                .fill(AppPalette.paleNavy)
                 .frame(width: 130, height: 14)
 
             RoundedRectangle(cornerRadius: 6)
-                .fill(Color(.systemGray5))
+                .fill(AppPalette.paleNavy)
                 .frame(height: 12)
 
             HStack(spacing: 8) {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.systemGray5))
+                    .fill(AppPalette.paleNavy)
                     .frame(height: 48)
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.systemGray5))
+                    .fill(AppPalette.paleNavy)
                     .frame(height: 48)
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.systemGray5))
+                    .fill(AppPalette.paleNavy)
                     .frame(height: 48)
             }
 
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemGray5))
+                .fill(AppPalette.paleNavy)
                 .frame(height: 40)
         }
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.secondarySystemBackground))
+                .fill(AppPalette.surface)
         )
     }
 }

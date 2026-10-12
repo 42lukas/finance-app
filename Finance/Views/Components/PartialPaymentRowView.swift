@@ -17,6 +17,7 @@ struct PartialPaymentRowView: View {
             HStack {
                 Label("\(String(format: "%.2f", payment.amount))€", systemImage: "eurosign.circle")
                     .font(.subheadline.weight(.medium))
+                    .foregroundStyle(AppPalette.navy)
                 Spacer()
                 Text(dateText)
                     .font(.caption)
@@ -24,7 +25,7 @@ struct PartialPaymentRowView: View {
                 Button(action: onEditNote) {
                     Image(systemName: payment.note?.isEmpty == false ? "note.text" : "square.and.pencil")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(payment.note?.isEmpty == false ? .blue : .secondary)
+                        .foregroundStyle(payment.note?.isEmpty == false ? AppPalette.emerald : Color.secondary)
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -33,6 +34,7 @@ struct PartialPaymentRowView: View {
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
                         .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppPalette.destructive)
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }

@@ -39,6 +39,7 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .background(AppPalette.background.ignoresSafeArea())
         }
     }
 }

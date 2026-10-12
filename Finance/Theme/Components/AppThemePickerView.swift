@@ -40,10 +40,10 @@ struct AppThemePickerView: View {
         if selectedTheme == theme {
             return AnyShapeStyle(theme.accentColor.opacity(0.16))
         }
-        return AnyShapeStyle(Color(.tertiarySystemBackground))
+        return AnyShapeStyle(AppPalette.surfaceMuted)
     }
 
     private func themeBorderColor(for theme: AppTheme) -> Color {
-        selectedTheme == theme ? theme.accentColor.opacity(0.45) : Color(.separator).opacity(0.2)
+        selectedTheme == theme ? theme.accentColor.opacity(0.45) : AppPalette.navy.opacity(0.12)
     }
 }

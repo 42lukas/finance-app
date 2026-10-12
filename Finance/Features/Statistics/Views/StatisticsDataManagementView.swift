@@ -25,7 +25,7 @@ struct StatisticsDataManagementView: View {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Hier entfernte Einträge verschwinden dauerhaft aus den Statistiken.", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(AppPalette.ochre)
                     Text("Das ist endgültig und kann nicht rückgängig gemacht werden.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -97,7 +97,7 @@ struct StatisticsDataManagementView: View {
                 Spacer()
                 Text("\(String(format: "%.2f", item.amount))€")
                     .font(.headline)
-                    .foregroundStyle(item.category == "schulde ich" ? .red : .green)
+                    .foregroundStyle(item.category == "schulde ich" ? AppPalette.navy : AppPalette.emerald)
             }
 
             if let description = item.descriptionText, !description.isEmpty {
@@ -115,8 +115,8 @@ struct StatisticsDataManagementView: View {
                     .font(.caption.weight(.semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background((item.isArchived ? Color.gray : Color.blue).opacity(0.14))
-                    .foregroundStyle(item.isArchived ? .gray : .blue)
+                    .background(item.isArchived ? AppPalette.paleNavy : AppPalette.mint)
+                    .foregroundStyle(item.isArchived ? AppPalette.navy : AppPalette.emerald)
                     .clipShape(Capsule())
             }
         }

@@ -89,8 +89,8 @@ struct SheetView: View {
                             .font(.headline.weight(.semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color.accentColor)
-                            .foregroundStyle(.white)
+                            .background(AppPalette.emerald)
+                            .foregroundStyle(AppPalette.surface)
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -151,8 +151,8 @@ struct SheetView: View {
         .background(
             LinearGradient(
                 colors: [
-                    Color.accentColor.opacity(colorScheme == .dark ? 0.35 : 0.20),
-                    Color.cyan.opacity(colorScheme == .dark ? 0.20 : 0.12)
+                    AppPalette.mint,
+                    AppPalette.paleNavy.opacity(colorScheme == .dark ? 0.75 : 0.55)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -178,7 +178,7 @@ struct SheetView: View {
                     amountActionButton(
                         title: "-\(String(format: "%.2f", selectedNum))€",
                         systemImage: "minus.circle.fill",
-                        tint: .red
+                        tint: AppPalette.navy
                     ) {
                         decreaseAmount(dec: selectedNum)
                     }
@@ -186,7 +186,7 @@ struct SheetView: View {
                     amountActionButton(
                         title: "+\(String(format: "%.2f", selectedNum))€",
                         systemImage: "plus.circle.fill",
-                        tint: .green
+                        tint: AppPalette.emerald
                     ) {
                         increaseAmount(inc: selectedNum)
                     }
@@ -247,14 +247,14 @@ struct SheetView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "person.crop.circle.fill")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(AppPalette.emerald)
                         Text(suggestion)
                             .foregroundStyle(.primary)
                         Spacer()
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 9)
-                    .background(Color(.tertiarySystemBackground))
+                    .background(AppPalette.surfaceMuted)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -265,8 +265,8 @@ struct SheetView: View {
     private var backgroundLayer: some View {
         LinearGradient(
             colors: [
-                Color(.systemBackground),
-                Color(.secondarySystemBackground).opacity(colorScheme == .dark ? 0.34 : 0.72)
+                AppPalette.background,
+                AppPalette.surfaceMuted.opacity(colorScheme == .dark ? 0.58 : 0.82)
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -283,7 +283,7 @@ struct SheetView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
-        .background(Color(.tertiarySystemBackground))
+        .background(AppPalette.surfaceMuted)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
@@ -309,7 +309,7 @@ struct SheetView: View {
         content()
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemBackground))
+            .background(AppPalette.surface)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 

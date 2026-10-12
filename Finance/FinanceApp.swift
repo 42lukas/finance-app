@@ -24,6 +24,7 @@ struct FinanceApp: App {
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(themeManager)
                 .preferredColorScheme(themeManager.selectedTheme.colorScheme)
+                .tint(AppPalette.emerald)
         }
     }
 }
@@ -49,7 +50,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func scheduleWeeklyNotification() {
         // Benachrichtigungsinhalt erstellen
         let content = UNMutableNotificationContent()
-        content.title = "Finance"
+        content.title = "Even"
         content.body = "Schulden eintreiben!"
         content.sound = .default
 
