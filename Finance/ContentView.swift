@@ -16,6 +16,7 @@ struct ContentView: View {
     }
 
     @State private var selectedTab: TopTab = .debts
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -40,6 +41,30 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(AppPalette.background.ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        StatisticsSettingsView()
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Einstellungen")
+                }
+            }
+        }
+        .task {
+            await DueDateNotificationScheduler.shared.reschedule()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task {
+                await DueDateNotificationScheduler.shared.reschedule()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
+            Task {
+                await DueDateNotificationScheduler.shared.reschedule()
+            }
         }
     }
 }

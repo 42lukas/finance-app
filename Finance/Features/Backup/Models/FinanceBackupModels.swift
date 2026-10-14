@@ -17,6 +17,7 @@ struct FinanceBackupPayload: Codable {
 struct FinanceBackupEntry: Codable, Identifiable {
     let id: UUID
     let timestamp: Date?
+    let dueDate: Date?
     let amount: Double
     let category: String?
     let person: String?

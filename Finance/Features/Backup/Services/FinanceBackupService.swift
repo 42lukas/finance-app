@@ -8,7 +8,7 @@ import CoreData
 import Foundation
 
 enum FinanceBackupService {
-    private static let schemaVersion: Int = 1
+    private static let schemaVersion: Int = 2
 
     static func makeBackupDocument(from items: [Item]) throws -> FinanceBackupDocument {
         let payload = FinanceBackupPayload(
@@ -36,6 +36,7 @@ enum FinanceBackupService {
         FinanceBackupEntry(
             id: UUID(),
             timestamp: item.timestamp,
+            dueDate: item.dueDate,
             amount: item.amount,
             category: item.category,
             person: item.person,

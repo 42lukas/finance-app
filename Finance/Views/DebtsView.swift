@@ -18,9 +18,11 @@ struct DebtsView: View {
     private var items: FetchedResults<Item>
 
     @State private var showSheet = false
-    @State private var showEditAmountAlert = false
+    @State private var showEditSheet = false
     @State private var itemToEdit: Item?
     @State private var editedAmountText = ""
+    @State private var editedHasDueDate = false
+    @State private var editedDueDate = Date()
 
     private var currentDebtTotal: Double {
         items
@@ -63,7 +65,7 @@ struct DebtsView: View {
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: false) {
                                 Button {
-                                    startEditingAmount(for: item)
+                                    startEditingEntry(item)
                                 } label: {
                                     Label("Bearbeiten", systemImage: "pencil")
                                 }
@@ -85,6 +87,9 @@ struct DebtsView: View {
         .sheet(isPresented: $showSheet) {
             SheetView(showSheet: $showSheet)
         }
+        .sheet(isPresented: $showEditSheet, onDismiss: resetEditState) {
+            editEntrySheet
+        }
         .toolbar {
             ToolbarItem {
                 Button {
@@ -97,18 +102,50 @@ struct DebtsView: View {
         }
         .navigationTitle("Schulden")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Betrag bearbeiten", isPresented: $showEditAmountAlert) {
-            TextField("Betrag in €", text: $editedAmountText)
-                .keyboardType(.decimalPad)
-            Button("Abbrechen", role: .cancel) {
-                resetEditState()
+    }
+
+    private var editEntrySheet: some View {
+        NavigationStack {
+            Form {
+                Section("Gesamtbetrag") {
+                    TextField("Betrag in €", text: $editedAmountText)
+                        .keyboardType(.decimalPad)
+
+                    if let itemToEdit {
+                        Text("Bereits bezahlt: \(currency(itemToEdit.effectivePaidAmount))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .listRowBackground(AppPalette.surface)
+
+                Section("Fälligkeit") {
+                    DueDateEditor(
+                        hasDueDate: $editedHasDueDate,
+                        dueDate: $editedDueDate
+                    )
+                }
+                .listRowBackground(AppPalette.surface)
             }
-            Button("Speichern") {
-                saveEditedAmount()
+            .scrollContentBackground(.hidden)
+            .background(AppPalette.background)
+            .navigationTitle("Eintrag bearbeiten")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") {
+                        showEditSheet = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Speichern") {
+                        saveEditedEntry()
+                    }
+                    .disabled(!canSaveEditedEntry)
+                }
             }
-        } message: {
-            Text("Der Gesamtbetrag kann nicht kleiner als die bereits bezahlte Summe sein.")
         }
+        .presentationDetents([.medium])
     }
 
     private var currentBalanceSummary: some View {
@@ -183,6 +220,10 @@ struct DebtsView: View {
                     Label(formattedDate(item.timestamp), systemImage: "calendar")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    if let dueDate = item.dueDate {
+                        DueDateLabel(dueDate: dueDate, isCompleted: remainingAmount <= 0)
+                    }
                 }
 
                 Spacer(minLength: 8)
@@ -241,32 +282,50 @@ struct DebtsView: View {
         }
     }
 
-    private func startEditingAmount(for item: Item) {
+    private func startEditingEntry(_ item: Item) {
         itemToEdit = item
         editedAmountText = String(format: "%.2f", item.amount)
-        showEditAmountAlert = true
+        editedHasDueDate = item.dueDate != nil
+        editedDueDate = item.dueDate
+            ?? Calendar.current.date(byAdding: .day, value: 7, to: Date())
+            ?? Date()
+        showEditSheet = true
     }
 
-    private func saveEditedAmount() {
-        defer { resetEditState() }
-        guard let item = itemToEdit else { return }
-
+    private var enteredEditedAmount: Double? {
         let normalized = editedAmountText
             .replacingOccurrences(of: ",", with: ".")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        return Double(normalized)
+    }
 
-        guard let newAmount = Double(normalized), newAmount >= 0 else { return }
+    private var canSaveEditedEntry: Bool {
+        guard let item = itemToEdit, let newAmount = enteredEditedAmount else { return false }
+        return newAmount >= item.effectivePaidAmount && newAmount >= 0
+    }
+
+    private func saveEditedEntry() {
+        defer { resetEditState() }
+        guard let item = itemToEdit else { return }
+        guard let newAmount = enteredEditedAmount, newAmount >= item.effectivePaidAmount else { return }
 
         withAnimation {
-            item.amount = max(newAmount, paidAmount(for: item))
+            item.amount = newAmount
+            item.dueDate = editedHasDueDate
+                ? Calendar.current.startOfDay(for: editedDueDate)
+                : nil
             saveContext()
         }
+
+        showEditSheet = false
     }
 
     private func resetEditState() {
         itemToEdit = nil
         editedAmountText = ""
-        showEditAmountAlert = false
+        editedHasDueDate = false
+        editedDueDate = Date()
+        showEditSheet = false
     }
 
     private func partialPayments(for item: Item) -> [PartialPayment] {

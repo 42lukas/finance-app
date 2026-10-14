@@ -6,9 +6,13 @@
 
 import SwiftUI
 import CoreData
+import UserNotifications
+import UIKit
 
 struct StatisticsSettingsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
@@ -20,6 +24,16 @@ struct StatisticsSettingsView: View {
     @State private var exportDocument: FinanceBackupDocument?
     @State private var exportFileName: String = FinanceBackupService.suggestedFileName()
     @State private var infoMessage: String?
+    @State private var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
+
+    @AppStorage(ReminderPreferences.notificationsEnabledKey)
+    private var notificationsEnabled: Bool = true
+
+    @AppStorage(ReminderPreferences.frequencyKey)
+    private var reminderFrequencyRawValue: Int = ReminderFrequency.threeTimes.rawValue
+
+    @AppStorage(ReminderPreferences.timeMinutesKey)
+    private var reminderTimeMinutes: Int = ReminderPreferences.defaultTimeMinutes
 
     var body: some View {
         ScrollView {
@@ -27,6 +41,8 @@ struct StatisticsSettingsView: View {
                 StatisticsSectionCard(title: "Darstellung", subtitle: "System, Hell oder Dunkel") {
                     AppThemePickerView(selectedTheme: $themeManager.selectedTheme)
                 }
+
+                reminderSettingsCard
 
                 StatisticsSectionCard(title: "Backup", subtitle: "JSON lokal in Dateien sichern") {
                     VStack(alignment: .leading, spacing: 10) {
@@ -83,6 +99,146 @@ struct StatisticsSettingsView: View {
         } message: {
             Text(infoMessage ?? "")
         }
+        .task {
+            await refreshNotificationAuthorizationStatus()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task {
+                await refreshNotificationAuthorizationStatus()
+                await DueDateNotificationScheduler.shared.reschedule()
+            }
+        }
+        .onChange(of: notificationsEnabled) { _, isEnabled in
+            Task {
+                if isEnabled {
+                    _ = await DueDateNotificationScheduler.shared.requestAuthorizationIfNeeded()
+                }
+                await DueDateNotificationScheduler.shared.reschedule()
+                await refreshNotificationAuthorizationStatus()
+            }
+        }
+        .onChange(of: reminderFrequencyRawValue) { _, _ in
+            Task {
+                await DueDateNotificationScheduler.shared.reschedule()
+            }
+        }
+        .onChange(of: reminderTimeMinutes) { _, _ in
+            Task {
+                await DueDateNotificationScheduler.shared.reschedule()
+            }
+        }
+    }
+
+    private var reminderSettingsCard: some View {
+        StatisticsSectionCard(
+            title: "Fälligkeitserinnerungen",
+            subtitle: "Zeitpunkt und Häufigkeit für alle Einträge"
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                Toggle(isOn: $notificationsEnabled) {
+                    Label("Mitteilungen", systemImage: "bell.badge.fill")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .tint(AppPalette.emerald)
+
+                if notificationsEnabled {
+                    Divider()
+                        .overlay(AppPalette.navy.opacity(0.10))
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Anzahl der Erinnerungen")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Picker("Anzahl der Erinnerungen", selection: $reminderFrequencyRawValue) {
+                            ForEach(ReminderFrequency.allCases) { frequency in
+                                Text("\(frequency.rawValue)×").tag(frequency.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        Text(selectedReminderFrequency.explanation)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Divider()
+                        .overlay(AppPalette.navy.opacity(0.10))
+
+                    DatePicker(
+                        "Uhrzeit",
+                        selection: reminderTimeBinding,
+                        displayedComponents: .hourAndMinute
+                    )
+                    .font(.subheadline.weight(.medium))
+
+                    notificationAuthorizationRow
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var notificationAuthorizationRow: some View {
+        switch notificationAuthorizationStatus {
+        case .authorized:
+            Label("Mitteilungen sind in iOS erlaubt.", systemImage: "checkmark.circle.fill")
+                .font(.caption)
+                .foregroundStyle(AppPalette.emerald)
+        case .provisional, .ephemeral:
+            Label("Mitteilungen werden aktuell leise zugestellt.", systemImage: "bell.slash")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .notDetermined:
+            Button {
+                Task {
+                    _ = await DueDateNotificationScheduler.shared.requestAuthorizationIfNeeded()
+                    await DueDateNotificationScheduler.shared.reschedule()
+                    await refreshNotificationAuthorizationStatus()
+                }
+            } label: {
+                Label("Mitteilungen erlauben", systemImage: "bell.fill")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(AppPalette.emerald)
+        case .denied:
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Mitteilungen sind in iOS deaktiviert.", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(AppPalette.ochre)
+
+                Button("In iOS-Einstellungen öffnen") {
+                    guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
+                    openURL(url)
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppPalette.navy)
+            }
+        @unknown default:
+            EmptyView()
+        }
+    }
+
+    private var selectedReminderFrequency: ReminderFrequency {
+        ReminderFrequency(rawValue: reminderFrequencyRawValue) ?? .threeTimes
+    }
+
+    private var reminderTimeBinding: Binding<Date> {
+        Binding {
+            let calendar = Calendar.current
+            let startOfToday = calendar.startOfDay(for: Date())
+            return calendar.date(byAdding: .minute, value: reminderTimeMinutes, to: startOfToday) ?? Date()
+        } set: { newValue in
+            let components = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+            reminderTimeMinutes = (components.hour ?? 18) * 60 + (components.minute ?? 0)
+        }
+    }
+
+    @MainActor
+    private func refreshNotificationAuthorizationStatus() async {
+        notificationAuthorizationStatus = await DueDateNotificationScheduler.shared.authorizationStatus()
     }
 
     private func exportBackup() {

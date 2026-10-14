@@ -15,6 +15,7 @@ struct FinanceApp: App {
     @StateObject private var themeManager = ThemeManager()
 
     init() {
+        ReminderPreferences.registerDefaults()
         FinanceAppShortcuts.updateAppShortcutParameters()
     }
 
@@ -29,44 +30,17 @@ struct FinanceApp: App {
     }
 }
 
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Benutzer um Berechtigungen für Benachrichtigungen bitten
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("Fehler bei der Berechtigungsanfrage: \(error.localizedDescription)")
-            }
-            
-            if granted {
-                print("Benachrichtigungen erlaubt.")
-                self.scheduleWeeklyNotification()
-            } else {
-                print("Benachrichtigungen nicht erlaubt.")
-            }
-        }
+        UNUserNotificationCenter.current().delegate = self
         return true
     }
 
-    func scheduleWeeklyNotification() {
-        // Benachrichtigungsinhalt erstellen
-        let content = UNMutableNotificationContent()
-        content.title = "Even"
-        content.body = "Schulden eintreiben!"
-        content.sound = .default
-
-        var dateComponents = DateComponents()
-        dateComponents.hour = 20
-
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-
-        let request = UNNotificationRequest(identifier: "weeklyNotification", content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Fehler beim Planen der wöchentlichen Benachrichtigung: \(error.localizedDescription)")
-            } else {
-                print("Wöchentliche Benachrichtigung erfolgreich geplant.")
-            }
-        }
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }

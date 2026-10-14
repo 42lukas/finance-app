@@ -100,6 +100,10 @@ struct DebtDetailView: View {
                     Label(formattedDate(item.timestamp), systemImage: "calendar")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    if let dueDate = item.dueDate {
+                        DueDateLabel(dueDate: dueDate, isCompleted: remainingAmount <= 0)
+                    }
                 }
 
                 Spacer()

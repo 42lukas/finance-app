@@ -36,6 +36,8 @@ struct SheetView: View {
 
     @State private var textFieldPerson: String = ""
     @State private var textFieldDescription: String = ""
+    @State private var hasDueDate: Bool = false
+    @State private var dueDate: Date = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
 
     private var personSuggestions: [String] {
         let query = normalizedPersonName(textFieldPerson)
@@ -229,6 +231,11 @@ struct SheetView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+
+                Divider()
+                    .overlay(AppPalette.navy.opacity(0.10))
+
+                DueDateEditor(hasDueDate: $hasDueDate, dueDate: $dueDate)
             }
             .animation(.snappy(duration: 0.22, extraBounce: 0.01), value: shouldShowPersonSuggestions)
         }
@@ -353,6 +360,7 @@ struct SheetView: View {
             newItem.isArchived = false
             newItem.paidAmount = 0
             newItem.partialPaymentsData = nil
+            newItem.dueDate = hasDueDate ? Calendar.current.startOfDay(for: dueDate) : nil
             newItem.category = selectedCategory
             newItem.person = textFieldPerson.trimmingCharacters(in: .whitespacesAndNewlines)
             newItem.descriptionText = textFieldDescription.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -363,6 +371,10 @@ struct SheetView: View {
                 let nsError = error as NSError
                 fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
             }
+        }
+
+        Task {
+            await DueDateNotificationScheduler.shared.reschedule(requestAuthorization: hasDueDate)
         }
     }
 }

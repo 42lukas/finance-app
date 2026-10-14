@@ -66,16 +66,6 @@ struct StatisticsView: View {
         }
         .navigationTitle("Statistiken")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    StatisticsSettingsView()
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .accessibilityLabel("Einstellungen")
-            }
-        }
         .background(AppPalette.background)
     }
 

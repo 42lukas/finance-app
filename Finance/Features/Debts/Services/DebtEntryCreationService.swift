@@ -37,7 +37,8 @@ struct DebtEntryCreationService {
         amount: Double,
         category: DebtEntryCategory,
         person: String,
-        reason: String
+        reason: String,
+        dueDate: Date? = nil
     ) async throws {
         let roundedAmount = (amount * 100).rounded() / 100
         guard roundedAmount > 0 else {
@@ -62,6 +63,7 @@ struct DebtEntryCreationService {
             item.category = category.rawValue
             item.person = trimmedPerson
             item.descriptionText = trimmedReason.isEmpty ? nil : trimmedReason
+            item.dueDate = dueDate.map { Calendar.current.startOfDay(for: $0) }
 
             if context.hasChanges {
                 try context.save()
