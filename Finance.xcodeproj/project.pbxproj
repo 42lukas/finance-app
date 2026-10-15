@@ -12,6 +12,7 @@
 		E20000000000000000000007 /* PartialPayment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000002 /* PartialPayment.swift */; };
 		E20000000000000000000008 /* ItemPaymentState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000003 /* ItemPaymentState.swift */; };
 		E20000000000000000000009 /* Finance.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000004 /* Finance.xcdatamodeld */; };
+		E2000000000000000000000B /* DebtArchiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000000000000000000000A /* DebtArchiveService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +46,7 @@
 		E20000000000000000000002 /* PartialPayment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Views/Models/PartialPayment.swift; sourceTree = SOURCE_ROOT; };
 		E20000000000000000000003 /* ItemPaymentState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Features/Debts/Models/ItemPaymentState.swift; sourceTree = SOURCE_ROOT; };
 		E20000000000000000000004 /* Finance.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.xcdatamodeld"; path = Finance/Finance.xcdatamodeld; sourceTree = SOURCE_ROOT; };
+		E2000000000000000000000A /* DebtArchiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Features/Archive/Services/DebtArchiveService.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -103,6 +105,7 @@
 				E20000000000000000000001 /* EvenSharedStore.swift */,
 				E20000000000000000000002 /* PartialPayment.swift */,
 				E20000000000000000000003 /* ItemPaymentState.swift */,
+				E2000000000000000000000A /* DebtArchiveService.swift */,
 				E20000000000000000000004 /* Finance.xcdatamodeld */,
 			);
 			name = "Shared Widget Sources";
@@ -228,6 +231,7 @@
 				E20000000000000000000006 /* EvenSharedStore.swift in Sources */,
 				E20000000000000000000007 /* PartialPayment.swift in Sources */,
 				E20000000000000000000008 /* ItemPaymentState.swift in Sources */,
+				E2000000000000000000000B /* DebtArchiveService.swift in Sources */,
 				E20000000000000000000009 /* Finance.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

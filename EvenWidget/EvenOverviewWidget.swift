@@ -167,20 +167,25 @@ private actor WidgetStore {
 
             guard let item = try context.fetch(request).first else { return }
             let remainingAmount = item.openAmount
+            var completionPaymentID: UUID?
 
             if remainingAmount > 0.005 {
                 var payments = item.decodedPartialPayments
-                payments.append(
-                    PartialPayment(
-                        amount: remainingAmount,
-                        note: "Über Widget erledigt"
-                    )
+                let completionPayment = PartialPayment(
+                    amount: remainingAmount,
+                    note: "Über Widget erledigt"
                 )
+                payments.append(completionPayment)
+                completionPaymentID = completionPayment.id
                 item.partialPaymentsData = try JSONEncoder().encode(payments)
                 item.paidAmount = max(item.amount, 0)
             }
 
-            item.isArchived = true
+            DebtArchiveService.archive(
+                item,
+                source: .widgetCompletion,
+                completionPaymentID: completionPaymentID
+            )
             if context.hasChanges {
                 try context.save()
             }

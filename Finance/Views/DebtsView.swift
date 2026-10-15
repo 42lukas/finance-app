@@ -23,6 +23,10 @@ struct DebtsView: View {
     @State private var editedAmountText = ""
     @State private var editedHasDueDate = false
     @State private var editedDueDate = Date()
+    @State private var recentlyArchivedItemID: UUID?
+    @State private var recentlyArchivedPerson = ""
+    @State private var dismissUndoTask: Task<Void, Never>?
+    @State private var archiveErrorMessage: String?
 
     private var currentDebtTotal: Double {
         items
@@ -90,8 +94,23 @@ struct DebtsView: View {
         .sheet(isPresented: $showEditSheet, onDismiss: resetEditState) {
             editEntrySheet
         }
+        .overlay(alignment: .bottom) {
+            if recentlyArchivedItemID != nil {
+                archiveUndoBanner
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
         .toolbar {
-            ToolbarItem {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                NavigationLink {
+                    ArchiveView()
+                } label: {
+                    Image(systemName: "archivebox")
+                }
+                .accessibilityLabel("Archiv öffnen")
+
                 Button {
                     showSheet.toggle()
                 } label: {
@@ -102,6 +121,15 @@ struct DebtsView: View {
         }
         .navigationTitle("Schulden")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Archivieren fehlgeschlagen", isPresented: archiveErrorBinding) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(archiveErrorMessage ?? "Der Eintrag konnte nicht archiviert werden.")
+        }
+        .onDisappear {
+            dismissUndoTask?.cancel()
+            clearUndoState()
+        }
     }
 
     private var editEntrySheet: some View {
@@ -276,10 +304,109 @@ struct DebtsView: View {
     }
 
     private func archiveItem(_ item: Item) {
-        withAnimation {
-            item.isArchived = true
-            saveContext()
+        let itemID = item.id ?? UUID()
+        item.id = itemID
+        let person = item.person?.isEmpty == false ? item.person! : "Eintrag"
+
+        do {
+            DebtArchiveService.archive(item, source: .manual)
+            try viewContext.save()
+        } catch {
+            viewContext.rollback()
+            archiveErrorMessage = "Der Eintrag konnte nicht gespeichert werden: \(error.localizedDescription)"
+            return
         }
+
+        withAnimation(.easeOut(duration: 0.2)) {
+            recentlyArchivedItemID = itemID
+            recentlyArchivedPerson = person
+        }
+
+        scheduleUndoDismissal(for: itemID)
+    }
+
+    private var archiveUndoBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "archivebox.fill")
+                .foregroundStyle(AppPalette.emerald)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Archiviert")
+                    .font(.subheadline.weight(.semibold))
+                Text(recentlyArchivedPerson)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Button("Rückgängig") {
+                restoreRecentlyArchivedItem()
+            }
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(AppPalette.emerald)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(AppPalette.surface)
+                .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+        )
+    }
+
+    private func restoreRecentlyArchivedItem() {
+        dismissUndoTask?.cancel()
+        guard let itemID = recentlyArchivedItemID else { return }
+
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "id == %@ AND isArchived == YES", itemID as CVarArg)
+
+        do {
+            if let item = try viewContext.fetch(request).first {
+                try DebtArchiveService.restore(item)
+                try viewContext.save()
+            }
+            withAnimation {
+                clearUndoState()
+            }
+        } catch {
+            viewContext.rollback()
+            archiveErrorMessage = "Der Eintrag konnte nicht wiederhergestellt werden: \(error.localizedDescription)"
+        }
+    }
+
+    private var archiveErrorBinding: Binding<Bool> {
+        Binding {
+            archiveErrorMessage != nil
+        } set: { isPresented in
+            if !isPresented {
+                archiveErrorMessage = nil
+            }
+        }
+    }
+
+    private func scheduleUndoDismissal(for itemID: UUID) {
+        dismissUndoTask?.cancel()
+        dismissUndoTask = Task {
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                guard recentlyArchivedItemID == itemID else { return }
+                withAnimation {
+                    clearUndoState()
+                }
+            }
+        }
+    }
+
+    private func clearUndoState() {
+        recentlyArchivedItemID = nil
+        recentlyArchivedPerson = ""
+        dismissUndoTask = nil
     }
 
     private func startEditingEntry(_ item: Item) {

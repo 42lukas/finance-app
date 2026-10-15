@@ -23,6 +23,9 @@ struct FinanceBackupEntry: Codable, Identifiable {
     let person: String?
     let descriptionText: String?
     let isArchived: Bool
+    let archivedAt: Date?
+    let archiveSource: String?
+    let archiveCompletionPaymentID: UUID?
     let paidAmount: Double
     let partialPayments: [FinanceBackupPartialPayment]
 }
