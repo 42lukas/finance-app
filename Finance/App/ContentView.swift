@@ -17,6 +17,7 @@ struct ContentView: View {
     }
 
     @State private var selectedTab: TopTab = .debts
+    @State private var isPresentingNewEntry = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.managedObjectContext) private var viewContext
 
@@ -35,7 +36,9 @@ struct ContentView: View {
                 Group {
                     switch selectedTab {
                     case .debts:
-                        DebtsView()
+                        DebtsView {
+                            isPresentingNewEntry = true
+                        }
                     case .statistics:
                         StatisticsView()
                     }
@@ -43,8 +46,30 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(AppPalette.background.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isPresentingNewEntry = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("Neuen Eintrag erstellen")
+                }
+
+                ToolbarItem(placement: .principal) {
+                    Text(selectedTab.rawValue)
+                        .font(.headline)
+                }
+
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    NavigationLink {
+                        ArchiveView()
+                    } label: {
+                        Image(systemName: "archivebox")
+                    }
+                    .accessibilityLabel("Archiv öffnen")
+
                     NavigationLink {
                         SettingsView()
                     } label: {
@@ -52,6 +77,9 @@ struct ContentView: View {
                     }
                     .accessibilityLabel("Einstellungen")
                 }
+            }
+            .sheet(isPresented: $isPresentingNewEntry) {
+                SheetView(showSheet: $isPresentingNewEntry)
             }
         }
         .task {

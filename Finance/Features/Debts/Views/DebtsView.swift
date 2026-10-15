@@ -8,6 +8,8 @@ import SwiftUI
 import CoreData
 
 struct DebtsView: View {
+    let onCreateEntry: () -> Void
+
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
@@ -17,7 +19,6 @@ struct DebtsView: View {
     )
     private var items: FetchedResults<Item>
 
-    @State private var showSheet = false
     @State private var showEditSheet = false
     @State private var itemToEdit: Item?
     @State private var editedAmountText = ""
@@ -49,7 +50,7 @@ struct DebtsView: View {
             Group {
                 if items.isEmpty {
                     DebtsEmptyStateView {
-                        showSheet = true
+                        onCreateEntry()
                     }
                 } else {
                     List {
@@ -88,9 +89,6 @@ struct DebtsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(AppPalette.background.ignoresSafeArea())
-        .sheet(isPresented: $showSheet) {
-            SheetView(showSheet: $showSheet)
-        }
         .sheet(isPresented: $showEditSheet, onDismiss: resetEditState) {
             editEntrySheet
         }
@@ -102,25 +100,6 @@ struct DebtsView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                NavigationLink {
-                    ArchiveView()
-                } label: {
-                    Image(systemName: "archivebox")
-                }
-                .accessibilityLabel("Archiv öffnen")
-
-                Button {
-                    showSheet.toggle()
-                } label: {
-                    Image(systemName: "plus")
-                        .foregroundStyle(AppPalette.emerald)
-                }
-            }
-        }
-        .navigationTitle("Schulden")
-        .navigationBarTitleDisplayMode(.inline)
         .alert("Archivieren fehlgeschlagen", isPresented: archiveErrorBinding) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -491,6 +470,6 @@ struct DebtsView: View {
 }
 
 #Preview {
-    DebtsView()
+    DebtsView(onCreateEntry: {})
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

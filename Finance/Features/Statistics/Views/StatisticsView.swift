@@ -64,8 +64,6 @@ struct StatisticsView: View {
             .padding(.horizontal)
             .padding(.vertical, 10)
         }
-        .navigationTitle("Statistiken")
-        .navigationBarTitleDisplayMode(.inline)
         .background(AppPalette.background)
     }
 
