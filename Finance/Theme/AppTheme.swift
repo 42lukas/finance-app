@@ -28,7 +28,7 @@ enum AppPalette {
     )
 
     static let emerald = dynamicColor(
-        light: UIColor(red: 8 / 255, green: 168 / 255, blue: 120 / 255, alpha: 1),
+        light: UIColor(red: 8 / 255, green: 122 / 255, blue: 91 / 255, alpha: 1),
         dark: UIColor(red: 45 / 255, green: 214 / 255, blue: 163 / 255, alpha: 1)
     )
 
@@ -43,7 +43,7 @@ enum AppPalette {
     )
 
     static let ochre = dynamicColor(
-        light: UIColor(red: 190 / 255, green: 132 / 255, blue: 32 / 255, alpha: 1),
+        light: UIColor(red: 138 / 255, green: 91 / 255, blue: 15 / 255, alpha: 1),
         dark: UIColor(red: 224 / 255, green: 182 / 255, blue: 93 / 255, alpha: 1)
     )
 

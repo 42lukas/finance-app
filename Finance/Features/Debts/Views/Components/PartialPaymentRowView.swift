@@ -42,7 +42,7 @@ struct PartialPaymentRowView: View {
             }
 
             if let note = payment.note, !note.isEmpty {
-                Label(note, systemImage: "text.bubble")
+                Text(note)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -46,7 +46,14 @@ struct ArchiveView: View {
         .background(AppPalette.background.ignoresSafeArea())
         .navigationTitle("Archiv")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Person oder Grund suchen")
+        .searchable(
+            text: $searchText,
+            prompt: "Person oder Grund suchen"
+        )
+        .enforcingCharacterLimit(
+            $searchText,
+            maximumLength: InputRules.archiveSearchMaxLength
+        )
         .confirmationDialog(
             "Wie soll der Eintrag wiederhergestellt werden?",
             isPresented: restoreChoiceBinding,
@@ -235,14 +242,14 @@ private struct ArchiveEntryCard: View {
                         .font(.headline)
 
                     if let description = item.descriptionText, !description.isEmpty {
-                        Label(description, systemImage: "note.text")
+                        Text(description)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
 
                     Label(
-                        item.category ?? "Kategorie",
+                        DebtCategory.title(for: item.category),
                         systemImage: isOwedByMe ? "arrow.up.circle.fill" : "arrow.down.circle.fill"
                     )
                     .font(.caption.weight(.semibold))
@@ -308,7 +315,7 @@ private struct ArchiveEntryCard: View {
     }
 
     private var displayPerson: String {
-        guard let person = item.person, !person.isEmpty else { return "Ohne Person" }
+        guard let person = item.person, !person.isEmpty else { return "Unbekannt" }
         return person
     }
 

@@ -18,8 +18,12 @@ struct DebtDetailView: View {
     @State private var editedNoteText = ""
     @State private var paymentToDelete: PartialPayment?
 
+    private var totalAmountCents: Int64 {
+        InputRules.storedCents(from: item.amount)
+    }
+
     private var totalAmount: Double {
-        max(item.amount, 0)
+        InputRules.amount(fromCents: totalAmountCents)
     }
 
     private var payments: [PartialPayment] {
@@ -28,30 +32,37 @@ struct DebtDetailView: View {
         return decoded.sorted { $0.timestamp > $1.timestamp }
     }
 
+    private var paidAmountCents: Int64 {
+        let historyPaid = payments.reduce(Int64.zero) {
+            $0 + InputRules.storedCents(from: $1.amount)
+        }
+        let effectivePaid = max(historyPaid, InputRules.storedCents(from: item.paidAmount))
+        return min(effectivePaid, totalAmountCents)
+    }
+
     private var paidAmount: Double {
-        let historyPaid = payments.reduce(0) { $0 + max($1.amount, 0) }
-        let effectivePaid = max(historyPaid, max(item.paidAmount, 0))
-        return min(effectivePaid, totalAmount)
+        InputRules.amount(fromCents: paidAmountCents)
+    }
+
+    private var remainingAmountCents: Int64 {
+        max(totalAmountCents - paidAmountCents, 0)
     }
 
     private var remainingAmount: Double {
-        max(totalAmount - paidAmount, 0)
+        InputRules.amount(fromCents: remainingAmountCents)
     }
 
-    private var enteredPaymentAmount: Double? {
-        let normalized = paymentAmountText
-            .replacingOccurrences(of: ",", with: ".")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return Double(normalized)
+    private var enteredPaymentCents: Int64? {
+        InputRules.cents(fromMoneyInput: paymentAmountText)
     }
 
     private var canSavePayment: Bool {
-        guard let amount = enteredPaymentAmount else { return false }
-        return amount > 0 && remainingAmount > 0
+        guard let enteredPaymentCents else { return false }
+        return remainingAmountCents > 0 && enteredPaymentCents <= remainingAmountCents
     }
 
     var body: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             VStack(spacing: 16) {
                 overviewCard
                 paymentsCard
@@ -66,15 +77,20 @@ struct DebtDetailView: View {
             addPaymentSheet
         }
         .alert("Notiz bearbeiten", isPresented: editNoteAlertBinding()) {
-            TextField("Notiz (optional)", text: $editedNoteText)
+            TextField(
+                "Notiz (optional)",
+                text: $editedNoteText
+            )
+            .enforcingCharacterLimit(
+                $editedNoteText,
+                maximumLength: InputRules.paymentNoteMaxLength
+            )
             Button("Abbrechen", role: .cancel) {
                 resetEditNote()
             }
             Button("Speichern") {
                 saveEditedNote()
             }
-        } message: {
-            Text("Ergänze einen kurzen Kontext zu dieser Teilzahlung.")
         }
         .alert("Teilzahlung löschen?", isPresented: deletePaymentAlertBinding()) {
             Button("Abbrechen", role: .cancel) {
@@ -93,11 +109,11 @@ struct DebtDetailView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
                     if let description = item.descriptionText, !description.isEmpty {
-                        Label(description, systemImage: "note.text")
+                        Text(description)
                             .font(.subheadline)
                     }
 
-                    Label(formattedDate(item.timestamp), systemImage: "calendar")
+                    Text(formattedDate(item.timestamp))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -109,7 +125,7 @@ struct DebtDetailView: View {
                 Spacer()
 
                 Label(
-                    item.category ?? "Kategorie",
+                    DebtCategory.title(for: item.category),
                     systemImage: item.category == "schulde ich" ? "arrow.up.circle.fill" : "arrow.down.circle.fill"
                 )
                 .font(.caption.weight(.semibold))
@@ -208,7 +224,10 @@ struct DebtDetailView: View {
                             dateText: formattedDate(payment.timestamp),
                             onEditNote: {
                                 paymentToEdit = payment
-                                editedNoteText = payment.note ?? ""
+                                editedNoteText = InputRules.truncated(
+                                    payment.note ?? "",
+                                    to: InputRules.paymentNoteMaxLength
+                                )
                             },
                             onDelete: {
                                 paymentToDelete = payment
@@ -232,29 +251,75 @@ struct DebtDetailView: View {
 
     private var addPaymentSheet: some View {
         NavigationStack {
-            Form {
-                Section("Betrag") {
-                    TextField("0,00 €", text: $paymentAmountText)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Betrag")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        TextField(
+                            "0,00 €",
+                            text: $paymentAmountText
+                        )
                         .keyboardType(.decimalPad)
+                        .font(.title3.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 11)
+                        .background(AppPalette.surfaceMuted)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .enforcingCharacterLimit(
+                            $paymentAmountText,
+                            maximumLength: InputRules.moneyInputMaxLength
+                        )
 
-                    Button("Restbetrag übernehmen") {
-                        paymentAmountText = String(format: "%.2f", remainingAmount)
+                        Button("Restbetrag übernehmen") {
+                            paymentAmountText = InputRules.editableMoneyText(for: remainingAmount)
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppPalette.emerald)
+                        .buttonStyle(.plain)
+
+                        Text("Aktuell offen: \(currency(remainingAmount))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .foregroundStyle(AppPalette.emerald)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppPalette.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-                    Text("Aktuell offen: \(currency(remainingAmount))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .listRowBackground(AppPalette.surface)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Notiz (optional)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
 
-                Section("Notiz (optional)") {
-                    TextField("z. B. Überweisung oder Barzahlung", text: $paymentNoteText)
+                        TextField(
+                            "z. B. Überweisung oder Barzahlung",
+                            text: $paymentNoteText
+                        )
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 11)
+                        .background(AppPalette.surfaceMuted)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .enforcingCharacterLimit(
+                            $paymentNoteText,
+                            maximumLength: InputRules.paymentNoteMaxLength
+                        )
+
+                        characterCounter(paymentNoteText, maximumLength: InputRules.paymentNoteMaxLength)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppPalette.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
-                .listRowBackground(AppPalette.surface)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 18)
             }
-            .scrollContentBackground(.hidden)
-            .background(AppPalette.background)
+            .scrollDismissesKeyboard(.interactively)
+            .background(AppPalette.background.ignoresSafeArea())
             .navigationTitle("Teilzahlung hinzufügen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -274,13 +339,26 @@ struct DebtDetailView: View {
         .presentationDetents([.medium])
     }
 
-    private func saveNewPayment() {
-        guard let enteredAmount = enteredPaymentAmount, enteredAmount > 0, remainingAmount > 0 else { return }
+    private func characterCounter(_ text: String, maximumLength: Int) -> some View {
+        Text("\(text.count)/\(maximumLength)")
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+    }
 
-        let normalizedNote = paymentNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func saveNewPayment() {
+        guard
+            let enteredPaymentCents,
+            remainingAmountCents > 0,
+            enteredPaymentCents <= remainingAmountCents
+        else { return }
+
         let payment = PartialPayment(
-            amount: min(enteredAmount, remainingAmount),
-            note: normalizedNote.isEmpty ? nil : normalizedNote
+            amount: InputRules.amount(fromCents: enteredPaymentCents),
+            note: InputRules.normalizedOptionalText(
+                paymentNoteText,
+                maximumLength: InputRules.paymentNoteMaxLength
+            )
         )
 
         var updatedPayments = payments
@@ -298,8 +376,10 @@ struct DebtDetailView: View {
             return
         }
 
-        let normalizedNote = editedNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
-        updatedPayments[index].note = normalizedNote.isEmpty ? nil : normalizedNote
+        updatedPayments[index].note = InputRules.normalizedOptionalText(
+            editedNoteText,
+            maximumLength: InputRules.paymentNoteMaxLength
+        )
         save(updatedPayments)
         resetEditNote()
     }
@@ -314,9 +394,11 @@ struct DebtDetailView: View {
 
     private func save(_ updatedPayments: [PartialPayment]) {
         let chronologicalPayments = updatedPayments.sorted { $0.timestamp < $1.timestamp }
-        let totalPaid = chronologicalPayments.reduce(0) { $0 + max($1.amount, 0) }
+        let totalPaidCents = chronologicalPayments.reduce(Int64.zero) {
+            $0 + InputRules.storedCents(from: $1.amount)
+        }
 
-        item.paidAmount = min(totalPaid, totalAmount)
+        item.paidAmount = InputRules.amount(fromCents: min(totalPaidCents, totalAmountCents))
         item.partialPaymentsData = try? JSONEncoder().encode(chronologicalPayments)
 
         do {

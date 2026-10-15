@@ -36,15 +36,15 @@ struct SettingsView: View {
     private var reminderTimeMinutes: Int = ReminderPreferences.defaultTimeMinutes
 
     var body: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 14) {
-                AppSectionCard(title: "Darstellung", subtitle: "System, Hell oder Dunkel") {
+                AppSectionCard(title: "Darstellung") {
                     AppThemePickerView(selectedTheme: $themeManager.selectedTheme)
                 }
 
                 reminderSettingsCard
 
-                AppSectionCard(title: "Backup", subtitle: "JSON lokal in Dateien sichern") {
+                AppSectionCard(title: "Backup") {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("\(items.count) Einträge werden in eine JSON-Datei exportiert.", systemImage: "doc.text.fill")
                             .font(.subheadline)
@@ -65,20 +65,6 @@ struct SettingsView: View {
                     }
                 }
 
-                AppSectionCard(title: "Daten", subtitle: "Einträge endgültig löschen") {
-                    NavigationLink {
-                        DataManagementView()
-                    } label: {
-                        Label("Daten verwalten", systemImage: "archivebox.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(AppPalette.paleNavy)
-                            .foregroundStyle(AppPalette.navy)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                }
             }
             .padding(.horizontal)
             .padding(.vertical, 10)
@@ -132,7 +118,7 @@ struct SettingsView: View {
 
     private var reminderSettingsCard: some View {
         AppSectionCard(
-            title: "Fälligkeitserinnerungen",
+            title: "Erinnerungen",
             subtitle: "Zeitpunkt und Häufigkeit für alle Einträge"
         ) {
             VStack(alignment: .leading, spacing: 14) {

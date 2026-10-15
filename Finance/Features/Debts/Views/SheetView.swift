@@ -28,16 +28,27 @@ struct SheetView: View {
     @State private var showManualAmountAlert: Bool = false
     @State private var manualAmountText: String = ""
 
-    private let nums = [0.01, 0.10, 1.00, 10.00]
-    @State private var selectedNum: Double = 1.00
+    private let nums = [1.00, 5.00, 10.00, 50.00]
+    @State private var selectedNum: Double = 10.00
 
-    private let categories = ["bekomme ich", "schulde ich"]
-    @State private var selectedCategory: String = "bekomme ich"
+    @State private var selectedCategory: DebtCategory = .receivable
 
     @State private var textFieldPerson: String = ""
     @State private var textFieldDescription: String = ""
-    @State private var hasDueDate: Bool = false
-    @State private var dueDate: Date = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+    @State private var dueDate: Date?
+
+    private var normalizedPerson: String {
+        InputRules.normalizedPerson(textFieldPerson)
+    }
+
+    private var amountCents: Int64 {
+        InputRules.storedCents(from: amount)
+    }
+
+    private var canSaveEntry: Bool {
+        !normalizedPerson.isEmpty
+            && (InputRules.minimumAmountCents...InputRules.maximumAmountCents).contains(amountCents)
+    }
 
     private var personSuggestions: [String] {
         let query = normalizedPersonName(textFieldPerson)
@@ -77,7 +88,7 @@ struct SheetView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     amountCard
                     incrementCard
@@ -96,6 +107,8 @@ struct SheetView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     .buttonStyle(.plain)
+                    .disabled(!canSaveEntry)
+                    .opacity(canSaveEntry ? 1 : 0.55)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
@@ -117,14 +130,20 @@ struct SheetView: View {
             }
         }
         .alert("Betrag manuell eingeben", isPresented: $showManualAmountAlert) {
-            TextField("Betrag in €", text: $manualAmountText)
+            TextField(
+                "Betrag in €",
+                text: $manualAmountText
+            )
                 .keyboardType(.decimalPad)
+                .enforcingCharacterLimit(
+                    $manualAmountText,
+                    maximumLength: InputRules.moneyInputMaxLength
+                )
             Button("Abbrechen", role: .cancel) {}
             Button("Übernehmen") {
                 applyManualAmount()
             }
-        } message: {
-            Text("Long-Press erkannt. Bitte Betrag eingeben.")
+            .disabled(InputRules.cents(fromMoneyInput: manualAmountText) == nil)
         }
     }
 
@@ -138,12 +157,14 @@ struct SheetView: View {
                 .font(.system(size: 42, weight: .bold, design: .rounded))
                 .foregroundStyle(amount > 0 ? .primary : .secondary)
                 .contentTransition(.numericText(value: amount))
+                .onTapGesture {
+                    presentManualAmountEntry()
+                }
                 .onLongPressGesture {
-                    manualAmountText = String(format: "%.2f", amount)
-                    showManualAmountAlert = true
+                    presentManualAmountEntry()
                 }
 
-            Text("Long Press auf den Betrag, um ihn direkt einzugeben.")
+            Text("Tippen für freie Eingabe")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -166,19 +187,19 @@ struct SheetView: View {
     private var incrementCard: some View {
         cardContainer {
             VStack(alignment: .leading, spacing: 12) {
-                Label("Schrittweite", systemImage: "dial.medium")
+                Label("Betrag anpassen", systemImage: "slider.horizontal.3")
                     .font(.subheadline.weight(.semibold))
 
                 Picker("Betragsschritt", selection: $selectedNum) {
                     ForEach(nums, id: \.self) { num in
-                        Text("\(String(format: "%.2f", num))€").tag(num)
+                        Text(stepAmountText(num)).tag(num)
                     }
                 }
                 .pickerStyle(.segmented)
 
                 HStack(spacing: 12) {
                     amountActionButton(
-                        title: "-\(String(format: "%.2f", selectedNum))€",
+                        title: "−\(stepAmountText(selectedNum))",
                         systemImage: "minus.circle.fill",
                         tint: AppPalette.navy
                     ) {
@@ -186,7 +207,7 @@ struct SheetView: View {
                     }
 
                     amountActionButton(
-                        title: "+\(String(format: "%.2f", selectedNum))€",
+                        title: "+\(stepAmountText(selectedNum))",
                         systemImage: "plus.circle.fill",
                         tint: AppPalette.emerald
                     ) {
@@ -203,21 +224,45 @@ struct SheetView: View {
                 Label("Eintragsdetails", systemImage: "text.badge.plus")
                     .font(.subheadline.weight(.semibold))
 
-                fieldRow(icon: "person.fill", placeholder: "Person", text: $textFieldPerson)
+                VStack(alignment: .trailing, spacing: 4) {
+                    fieldRow(
+                        icon: "person.fill",
+                        placeholder: "Person",
+                        text: $textFieldPerson
+                    )
+                    .enforcingCharacterLimit(
+                        $textFieldPerson,
+                        maximumLength: InputRules.personMaxLength
+                    )
                     .focused($focusedField, equals: .person)
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled(true)
                     .submitLabel(.next)
+
+                    characterCounter(textFieldPerson, maximumLength: InputRules.personMaxLength)
+                }
 
                 if shouldShowPersonSuggestions {
                     personSuggestionList
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                fieldRow(icon: "note.text", placeholder: "Beschreibung", text: $textFieldDescription)
+                VStack(alignment: .trailing, spacing: 4) {
+                    fieldRow(
+                        icon: "note.text",
+                        placeholder: "Beschreibung",
+                        text: $textFieldDescription
+                    )
+                    .enforcingCharacterLimit(
+                        $textFieldDescription,
+                        maximumLength: InputRules.descriptionMaxLength
+                    )
                     .focused($focusedField, equals: .description)
                     .textInputAutocapitalization(.sentences)
                     .submitLabel(.done)
+
+                    characterCounter(textFieldDescription, maximumLength: InputRules.descriptionMaxLength)
+                }
 
                 VStack(alignment: .leading, spacing: 6) {
                     Label("Kategorie", systemImage: "tag.fill")
@@ -225,8 +270,8 @@ struct SheetView: View {
                         .foregroundStyle(.secondary)
 
                     Picker("Kategorie", selection: $selectedCategory) {
-                        ForEach(categories, id: \.self) { category in
-                            Text(category).tag(category)
+                        ForEach(DebtCategory.allCases) { category in
+                            Text(category.title).tag(category)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -235,7 +280,7 @@ struct SheetView: View {
                 Divider()
                     .overlay(AppPalette.navy.opacity(0.10))
 
-                DueDateEditor(hasDueDate: $hasDueDate, dueDate: $dueDate)
+                DueDateEditor(dueDate: $dueDate)
             }
             .animation(.snappy(duration: 0.22, extraBounce: 0.01), value: shouldShowPersonSuggestions)
         }
@@ -249,7 +294,10 @@ struct SheetView: View {
 
             ForEach(personSuggestions, id: \.self) { suggestion in
                 Button {
-                    textFieldPerson = suggestion
+                    textFieldPerson = InputRules.truncated(
+                        suggestion,
+                        to: InputRules.personMaxLength
+                    )
                     focusedField = .description
                 } label: {
                     HStack(spacing: 10) {
@@ -294,6 +342,12 @@ struct SheetView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
+    private func characterCounter(_ text: String, maximumLength: Int) -> some View {
+        Text("\(text.count)/\(maximumLength)")
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.secondary)
+    }
+
     private func amountActionButton(
         title: String,
         systemImage: String,
@@ -329,6 +383,10 @@ struct SheetView: View {
         return formatter.string(from: value as NSNumber) ?? String(format: "%.2f €", value)
     }
 
+    private func stepAmountText(_ value: Double) -> String {
+        "\(value.formatted(.number.precision(.fractionLength(0)))) €"
+    }
+
     private func normalizedPersonName(_ value: String) -> String {
         value
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
@@ -336,35 +394,46 @@ struct SheetView: View {
     }
 
     func increaseAmount(inc: Double) {
-        amount += inc
+        let incrementCents = InputRules.storedCents(from: inc)
+        amount = InputRules.amount(
+            fromCents: min(amountCents + incrementCents, InputRules.maximumAmountCents)
+        )
     }
 
     func decreaseAmount(dec: Double) {
-        amount = max(0, amount - dec)
+        let decrementCents = InputRules.storedCents(from: dec)
+        amount = InputRules.amount(fromCents: max(amountCents - decrementCents, 0))
     }
 
     private func applyManualAmount() {
-        let normalized = manualAmountText
-            .replacingOccurrences(of: ",", with: ".")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let cents = InputRules.cents(fromMoneyInput: manualAmountText) else { return }
+        amount = InputRules.amount(fromCents: cents)
+    }
 
-        guard let newAmount = Double(normalized) else { return }
-        amount = max(0, newAmount)
+    private func presentManualAmountEntry() {
+        manualAmountText = InputRules.editableMoneyText(for: amount)
+        showManualAmountAlert = true
     }
     
     private func addItem() {
+        guard canSaveEntry else { return }
+
+        let shouldRequestNotificationAuthorization = dueDate != nil
         withAnimation {
             let newItem = Item(context: viewContext)
             newItem.id = UUID()
             newItem.timestamp = Date()
-            newItem.amount = amount
+            newItem.amount = InputRules.amount(fromCents: amountCents)
             newItem.isArchived = false
             newItem.paidAmount = 0
             newItem.partialPaymentsData = nil
-            newItem.dueDate = hasDueDate ? Calendar.current.startOfDay(for: dueDate) : nil
-            newItem.category = selectedCategory
-            newItem.person = textFieldPerson.trimmingCharacters(in: .whitespacesAndNewlines)
-            newItem.descriptionText = textFieldDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+            newItem.dueDate = dueDate.map { Calendar.current.startOfDay(for: $0) }
+            newItem.category = selectedCategory.rawValue
+            newItem.person = normalizedPerson
+            newItem.descriptionText = InputRules.normalizedOptionalText(
+                textFieldDescription,
+                maximumLength: InputRules.descriptionMaxLength
+            )
             
             do {
                 try viewContext.save()
@@ -375,7 +444,9 @@ struct SheetView: View {
         }
 
         Task {
-            await DueDateNotificationScheduler.shared.reschedule(requestAuthorization: hasDueDate)
+            await DueDateNotificationScheduler.shared.reschedule(
+                requestAuthorization: shouldRequestNotificationAuthorization
+            )
         }
     }
 }

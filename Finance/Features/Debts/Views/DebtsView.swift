@@ -19,11 +19,7 @@ struct DebtsView: View {
     )
     private var items: FetchedResults<Item>
 
-    @State private var showEditSheet = false
     @State private var itemToEdit: Item?
-    @State private var editedAmountText = ""
-    @State private var editedHasDueDate = false
-    @State private var editedDueDate = Date()
     @State private var recentlyArchivedItemID: UUID?
     @State private var recentlyArchivedPerson = ""
     @State private var dismissUndoTask: Task<Void, Never>?
@@ -84,13 +80,22 @@ struct DebtsView: View {
                     .padding(.horizontal)
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
+                    .scrollIndicators(.hidden)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(AppPalette.background.ignoresSafeArea())
-        .sheet(isPresented: $showEditSheet, onDismiss: resetEditState) {
-            editEntrySheet
+        .sheet(item: $itemToEdit, onDismiss: resetEditState) { item in
+            DebtEditSheet(item: item) { amount, reason, category, dueDate in
+                saveEditedEntry(
+                    item,
+                    amount: amount,
+                    reason: reason,
+                    category: category,
+                    dueDate: dueDate
+                )
+            }
         }
         .overlay(alignment: .bottom) {
             if recentlyArchivedItemID != nil {
@@ -109,50 +114,6 @@ struct DebtsView: View {
             dismissUndoTask?.cancel()
             clearUndoState()
         }
-    }
-
-    private var editEntrySheet: some View {
-        NavigationStack {
-            Form {
-                Section("Gesamtbetrag") {
-                    TextField("Betrag in €", text: $editedAmountText)
-                        .keyboardType(.decimalPad)
-
-                    if let itemToEdit {
-                        Text("Bereits bezahlt: \(currency(itemToEdit.effectivePaidAmount))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .listRowBackground(AppPalette.surface)
-
-                Section("Fälligkeit") {
-                    DueDateEditor(
-                        hasDueDate: $editedHasDueDate,
-                        dueDate: $editedDueDate
-                    )
-                }
-                .listRowBackground(AppPalette.surface)
-            }
-            .scrollContentBackground(.hidden)
-            .background(AppPalette.background)
-            .navigationTitle("Eintrag bearbeiten")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Abbrechen") {
-                        showEditSheet = false
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Speichern") {
-                        saveEditedEntry()
-                    }
-                    .disabled(!canSaveEditedEntry)
-                }
-            }
-        }
-        .presentationDetents([.medium])
     }
 
     private var currentBalanceSummary: some View {
@@ -213,39 +174,47 @@ struct DebtsView: View {
         let categoryColor = item.category == "schulde ich" ? AppPalette.navy : AppPalette.emerald
 
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(item.person?.isEmpty == false ? item.person! : "Ohne Person")
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 12) {
+                    Text(item.person?.isEmpty == false ? item.person! : "Unbekannt")
                         .font(.headline)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
 
-                    if let description = item.descriptionText, !description.isEmpty {
-                        Label(description, systemImage: "note.text")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+
+                    HStack(spacing: 6) {
+                        Image(
+                            systemName: item.category == "schulde ich"
+                                ? "arrow.up.circle.fill"
+                                : "arrow.down.circle.fill"
+                        )
+                        Text(DebtCategory.title(for: item.category))
+                            .lineLimit(1)
                     }
-
-                    Label(formattedDate(item.timestamp), systemImage: "calendar")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if let dueDate = item.dueDate {
-                        DueDateLabel(dueDate: dueDate, isCompleted: remainingAmount <= 0)
-                    }
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .background(item.category == "schulde ich" ? AppPalette.paleNavy : AppPalette.mint)
+                    .foregroundStyle(categoryColor)
+                    .clipShape(Capsule())
+                    .fixedSize(horizontal: true, vertical: true)
                 }
 
-                Spacer(minLength: 8)
+                if let description = item.descriptionText, !description.isEmpty {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
-                Label(
-                    item.category ?? "Kategorie",
-                    systemImage: item.category == "schulde ich" ? "arrow.up.circle.fill" : "arrow.down.circle.fill"
-                )
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 9)
-                .padding(.vertical, 5)
-                .background(item.category == "schulde ich" ? AppPalette.paleNavy : AppPalette.mint)
-                .foregroundStyle(categoryColor)
-                .clipShape(Capsule())
+                if let dueDate = item.dueDate {
+                    DueDateLabel(dueDate: dueDate, isCompleted: remainingAmount <= 0)
+                        .padding(.top, 4)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(alignment: .firstTextBaseline) {
                 Text(totalAmount, format: .currency(code: "EUR"))
@@ -390,48 +359,26 @@ struct DebtsView: View {
 
     private func startEditingEntry(_ item: Item) {
         itemToEdit = item
-        editedAmountText = String(format: "%.2f", item.amount)
-        editedHasDueDate = item.dueDate != nil
-        editedDueDate = item.dueDate
-            ?? Calendar.current.date(byAdding: .day, value: 7, to: Date())
-            ?? Date()
-        showEditSheet = true
     }
 
-    private var enteredEditedAmount: Double? {
-        let normalized = editedAmountText
-            .replacingOccurrences(of: ",", with: ".")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return Double(normalized)
-    }
-
-    private var canSaveEditedEntry: Bool {
-        guard let item = itemToEdit, let newAmount = enteredEditedAmount else { return false }
-        return newAmount >= item.effectivePaidAmount && newAmount >= 0
-    }
-
-    private func saveEditedEntry() {
-        defer { resetEditState() }
-        guard let item = itemToEdit else { return }
-        guard let newAmount = enteredEditedAmount, newAmount >= item.effectivePaidAmount else { return }
-
+    private func saveEditedEntry(
+        _ item: Item,
+        amount: Double,
+        reason: String?,
+        category: String,
+        dueDate: Date?
+    ) {
         withAnimation {
-            item.amount = newAmount
-            item.dueDate = editedHasDueDate
-                ? Calendar.current.startOfDay(for: editedDueDate)
-                : nil
+            item.amount = amount
+            item.descriptionText = reason
+            item.category = category
+            item.dueDate = dueDate
             saveContext()
         }
-
-        showEditSheet = false
     }
 
     private func resetEditState() {
         itemToEdit = nil
-        editedAmountText = ""
-        editedHasDueDate = false
-        editedDueDate = Date()
-        showEditSheet = false
     }
 
     private func partialPayments(for item: Item) -> [PartialPayment] {
@@ -456,12 +403,6 @@ struct DebtsView: View {
             let nsError = error as NSError
             fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
         }
-    }
-
-    private func formattedDate(_ date: Date?) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM.yyyy, HH:mm"
-        return formatter.string(from: date ?? Date())
     }
 
     private func currency(_ amount: Double) -> String {

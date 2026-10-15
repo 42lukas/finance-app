@@ -65,14 +65,23 @@ struct PersistenceController {
         container.viewContext.automaticallyMergesChangesFromParent = true
     }
 
+    @MainActor
     func refreshViewContextFromSharedStore() {
         let context = container.viewContext
-        context.perform {
-            guard !context.hasChanges else { return }
-            // Keep existing Item references attached to the context. Views such as the
-            // edit sheet hold those references while a widget update may arrive.
-            context.refreshAllObjects()
+        guard !context.hasChanges else { return }
+
+        do {
+            // Advance the context beyond the store snapshot it used before the app
+            // entered the background. The widget writes through another coordinator.
+            try context.setQueryGenerationFrom(.current)
+        } catch {
+            print("Widget-Änderungen konnten nicht synchronisiert werden: \(error.localizedDescription)")
         }
+
+        // Keep existing Item references attached to the context. Views such as the
+        // detail and edit screens may still hold those references when the app resumes.
+        context.refreshAllObjects()
+        context.processPendingChanges()
     }
 
     private static var isWidgetExtension: Bool {

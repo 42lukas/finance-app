@@ -54,5 +54,9 @@ struct DueDateLabel: View {
         Label(labelText, systemImage: dayDifference < 0 && !isCompleted ? "exclamationmark.circle.fill" : "calendar.badge.clock")
             .font(.caption.weight(dayDifference <= 0 && !isCompleted ? .semibold : .regular))
             .foregroundStyle(tint)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .allowsTightening(true)
+            .layoutPriority(1)
     }
 }

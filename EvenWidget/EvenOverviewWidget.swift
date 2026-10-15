@@ -24,11 +24,11 @@ private enum WidgetPalette {
         dark: UIColor(red: 169 / 255, green: 192 / 255, blue: 208 / 255, alpha: 1)
     )
     static let emerald = dynamic(
-        light: UIColor(red: 8 / 255, green: 168 / 255, blue: 120 / 255, alpha: 1),
+        light: UIColor(red: 8 / 255, green: 122 / 255, blue: 91 / 255, alpha: 1),
         dark: UIColor(red: 45 / 255, green: 214 / 255, blue: 163 / 255, alpha: 1)
     )
     static let ochre = dynamic(
-        light: UIColor(red: 190 / 255, green: 132 / 255, blue: 32 / 255, alpha: 1),
+        light: UIColor(red: 138 / 255, green: 91 / 255, blue: 15 / 255, alpha: 1),
         dark: UIColor(red: 224 / 255, green: 182 / 255, blue: 93 / 255, alpha: 1)
     )
 
@@ -126,7 +126,7 @@ private actor WidgetStore {
 
                     return WidgetDebt(
                         id: id,
-                        person: person.isEmpty ? "Ohne Person" : person,
+                        person: person.isEmpty ? "Unbekannt" : person,
                         reason: reason,
                         remainingAmount: item.openAmount,
                         category: item.category ?? "",

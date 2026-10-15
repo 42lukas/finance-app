@@ -49,7 +49,7 @@ struct StatisticsView: View {
     private let currencyCode = Locale.current.currency?.identifier ?? "EUR"
 
     var body: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 14) {
                 if items.isEmpty {
                     emptyState
@@ -69,8 +69,7 @@ struct StatisticsView: View {
 
     private var balanceSection: some View {
         AppSectionCard(
-            title: "Bilanz",
-            subtitle: "Gesamte Historie inklusive Archiv"
+            title: "Bilanz"
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 5) {
@@ -82,10 +81,6 @@ struct StatisticsView: View {
                         .font(.system(size: 34, weight: .bold, design: .rounded))
                         .foregroundStyle(balanceColor(for: historicalNetAmount))
                         .contentTransition(.numericText(value: historicalNetAmount))
-
-                    Text(historicalBalanceExplanation)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
                 }
 
                 HStack(spacing: 20) {
@@ -140,19 +135,9 @@ struct StatisticsView: View {
         let trendColor = balanceColor(for: historicalNetAmount)
 
         return AppSectionCard(
-            title: "Gesamtwert über Zeit",
-            subtitle: "Kumulative Bilanz seit Beginn • inklusive Archiv"
+            title: "Gesamtwert über Zeit"
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 7) {
-                    Circle()
-                        .fill(trendColor)
-                        .frame(width: 8, height: 8)
-                    Text("Bekommen minus Schulden")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
                 Chart {
                     RuleMark(y: .value("Ausgeglichen", 0))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
@@ -231,8 +216,7 @@ struct StatisticsView: View {
         let maximum = max(people.map { Double($0.entries) }.max() ?? 0, 1)
 
         return AppSectionCard(
-            title: "Am häufigsten",
-            subtitle: "Anzahl aller Einträge • inklusive Archiv"
+            title: "Am häufigsten"
         ) {
             if people.isEmpty {
                 Text("Keine Personendaten vorhanden.")
@@ -276,8 +260,7 @@ struct StatisticsView: View {
 
     private var openDebtsSection: some View {
         AppSectionCard(
-            title: "Offene Schulden",
-            subtitle: "Nur aktive Beträge, die du noch schuldest"
+            title: "Offene Schulden"
         ) {
             if snapshot.oldestOpenDebt == nil && snapshot.largestOpenDebt == nil {
                 Label("Du hast aktuell keine offenen Schulden.", systemImage: "checkmark.circle.fill")
@@ -319,8 +302,7 @@ struct StatisticsView: View {
         let remaining = max(snapshot.summary.totalAmount - snapshot.summary.paidAmount, 0)
 
         return AppSectionCard(
-            title: "Bezahlt",
-            subtitle: "Gesamtes Volumen inklusive Archiv"
+            title: "Bezahlt"
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline) {
@@ -405,16 +387,6 @@ struct StatisticsView: View {
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(color)
         }
-    }
-
-    private var historicalBalanceExplanation: String {
-        if abs(historicalNetAmount) < 0.005 {
-            return "Schulden und Forderungen sind über die gesamte Historie ausgeglichen."
-        }
-        if historicalNetAmount > 0 {
-            return "Du hast insgesamt \(currency(historicalNetAmount)) mehr zum Bekommen erfasst."
-        }
-        return "Du hast insgesamt \(currency(abs(historicalNetAmount))) mehr Schulden erfasst."
     }
 
     private func balanceColor(for value: Double) -> Color {

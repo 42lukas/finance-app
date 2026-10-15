@@ -10,7 +10,7 @@ struct DebtsEmptyStateView: View {
     let onCreateEntry: () -> Void
 
     var body: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Noch keine Einträge")

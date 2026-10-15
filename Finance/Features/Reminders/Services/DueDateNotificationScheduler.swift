@@ -109,7 +109,7 @@ actor DueDateNotificationScheduler {
             do {
                 try await notificationCenter.add(request)
             } catch {
-                print("Fälligkeitserinnerung konnte nicht geplant werden: \(error.localizedDescription)")
+                print("Erinnerung konnte nicht geplant werden: \(error.localizedDescription)")
             }
         }
     }

@@ -5,6 +5,7 @@
 //
 
 import SwiftUI
+import Combine
 import CoreData
 import WidgetKit
 
@@ -58,7 +59,7 @@ struct ContentView: View {
                 }
 
                 ToolbarItem(placement: .principal) {
-                    Text(selectedTab.rawValue)
+                    Text("Even")
                         .font(.headline)
                 }
 
@@ -93,13 +94,22 @@ struct ContentView: View {
                 await DueDateNotificationScheduler.shared.reschedule()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            PersistenceController.shared.refreshViewContextFromSharedStore()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)
+                .receive(on: DispatchQueue.main)
+        ) { _ in
             WidgetCenter.shared.reloadTimelines(ofKind: "EvenOverviewWidget")
             Task {
                 await DueDateNotificationScheduler.shared.reschedule()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange)) { _ in
+        .onReceive(
+            NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange)
+                .receive(on: DispatchQueue.main)
+        ) { _ in
             guard !viewContext.hasChanges else { return }
             PersistenceController.shared.refreshViewContextFromSharedStore()
         }
