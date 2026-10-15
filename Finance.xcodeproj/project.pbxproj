@@ -6,8 +6,45 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E10000000000000000000008 /* EvenWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = E10000000000000000000001 /* EvenWidget.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E20000000000000000000006 /* EvenSharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000001 /* EvenSharedStore.swift */; };
+		E20000000000000000000007 /* PartialPayment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000002 /* PartialPayment.swift */; };
+		E20000000000000000000008 /* ItemPaymentState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000003 /* ItemPaymentState.swift */; };
+		E20000000000000000000009 /* Finance.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000004 /* Finance.xcdatamodeld */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E10000000000000000000009 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA7D2B8B2D3C0FFE00015483 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E10000000000000000000003;
+			remoteInfo = EvenWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E10000000000000000000007 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E10000000000000000000008 /* EvenWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		FA7D2B932D3C0FFE00015483 /* Finance.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Finance.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E10000000000000000000001 /* EvenWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = EvenWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E20000000000000000000001 /* EvenSharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Infrastructure/EvenSharedStore.swift; sourceTree = SOURCE_ROOT; };
+		E20000000000000000000002 /* PartialPayment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Views/Models/PartialPayment.swift; sourceTree = SOURCE_ROOT; };
+		E20000000000000000000003 /* ItemPaymentState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Features/Debts/Models/ItemPaymentState.swift; sourceTree = SOURCE_ROOT; };
+		E20000000000000000000004 /* Finance.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.xcdatamodeld"; path = Finance/Finance.xcdatamodeld; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +53,22 @@
 			path = Finance;
 			sourceTree = "<group>";
 		};
+		E10000000000000000000002 /* EvenWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = EvenWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		FA7D2B902D3C0FFE00015483 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E10000000000000000000005 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +82,8 @@
 			isa = PBXGroup;
 			children = (
 				FA7D2B952D3C0FFE00015483 /* Finance */,
+				E10000000000000000000002 /* EvenWidget */,
+				E20000000000000000000005 /* Shared Widget Sources */,
 				FA7D2B942D3C0FFE00015483 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +92,20 @@
 			isa = PBXGroup;
 			children = (
 				FA7D2B932D3C0FFE00015483 /* Finance.app */,
+				E10000000000000000000001 /* EvenWidget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E20000000000000000000005 /* Shared Widget Sources */ = {
+			isa = PBXGroup;
+			children = (
+				E20000000000000000000001 /* EvenSharedStore.swift */,
+				E20000000000000000000002 /* PartialPayment.swift */,
+				E20000000000000000000003 /* ItemPaymentState.swift */,
+				E20000000000000000000004 /* Finance.xcdatamodeld */,
+			);
+			name = "Shared Widget Sources";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,10 +118,12 @@
 				FA7D2B8F2D3C0FFE00015483 /* Sources */,
 				FA7D2B902D3C0FFE00015483 /* Frameworks */,
 				FA7D2B912D3C0FFE00015483 /* Resources */,
+				E10000000000000000000007 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E1000000000000000000000A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				FA7D2B952D3C0FFE00015483 /* Finance */,
@@ -69,6 +134,28 @@
 			productName = Finance;
 			productReference = FA7D2B932D3C0FFE00015483 /* Finance.app */;
 			productType = "com.apple.product-type.application";
+		};
+		E10000000000000000000003 /* EvenWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1000000000000000000000D /* Build configuration list for PBXNativeTarget "EvenWidget" */;
+			buildPhases = (
+				E10000000000000000000004 /* Sources */,
+				E10000000000000000000005 /* Frameworks */,
+				E10000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E10000000000000000000002 /* EvenWidget */,
+			);
+			name = EvenWidget;
+			packageProductDependencies = (
+			);
+			productName = EvenWidget;
+			productReference = E10000000000000000000001 /* EvenWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -81,6 +168,9 @@
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					FA7D2B922D3C0FFE00015483 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					E10000000000000000000003 = {
 						CreatedOnToolsVersion = 16.2;
 					};
 				};
@@ -101,12 +191,20 @@
 			projectRoot = "";
 			targets = (
 				FA7D2B922D3C0FFE00015483 /* Finance */,
+				E10000000000000000000003 /* EvenWidget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		FA7D2B912D3C0FFE00015483 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E10000000000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -123,7 +221,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E10000000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E20000000000000000000006 /* EvenSharedStore.swift in Sources */,
+				E20000000000000000000007 /* PartialPayment.swift in Sources */,
+				E20000000000000000000008 /* ItemPaymentState.swift in Sources */,
+				E20000000000000000000009 /* Finance.xcdatamodeld in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E1000000000000000000000A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E10000000000000000000003 /* EvenWidget */;
+			targetProxy = E10000000000000000000009 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		FA7D2BA42D3C0FFF00015483 /* Debug */ = {
@@ -315,6 +432,60 @@
 			};
 			name = Release;
 		};
+		E1000000000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = EvenWidget/EvenWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_LANGUAGE = de;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/EvenWidget-Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.finance.EvenWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E1000000000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = EvenWidget/EvenWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_LANGUAGE = de;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/EvenWidget-Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lukas42.finance.EvenWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -332,6 +503,15 @@
 			buildConfigurations = (
 				FA7D2BA72D3C0FFF00015483 /* Debug */,
 				FA7D2BA82D3C0FFF00015483 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1000000000000000000000D /* Build configuration list for PBXNativeTarget "EvenWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1000000000000000000000B /* Debug */,
+				E1000000000000000000000C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

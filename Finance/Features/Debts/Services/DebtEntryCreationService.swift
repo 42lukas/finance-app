@@ -55,6 +55,7 @@ struct DebtEntryCreationService {
         let context = container.newBackgroundContext()
         try await context.perform {
             let item = Item(context: context)
+            item.id = UUID()
             item.timestamp = Date()
             item.amount = roundedAmount
             item.isArchived = false

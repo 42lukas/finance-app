@@ -355,6 +355,7 @@ struct SheetView: View {
     private func addItem() {
         withAnimation {
             let newItem = Item(context: viewContext)
+            newItem.id = UUID()
             newItem.timestamp = Date()
             newItem.amount = amount
             newItem.isArchived = false

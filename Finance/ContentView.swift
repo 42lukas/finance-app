@@ -6,6 +6,7 @@
 
 import SwiftUI
 import CoreData
+import WidgetKit
 
 struct ContentView: View {
     enum TopTab: String, CaseIterable, Identifiable {
@@ -17,6 +18,7 @@ struct ContentView: View {
 
     @State private var selectedTab: TopTab = .debts
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.managedObjectContext) private var viewContext
 
     var body: some View {
         NavigationStack {
@@ -57,14 +59,21 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
+            PersistenceController.shared.refreshViewContextFromSharedStore()
+            WidgetCenter.shared.reloadTimelines(ofKind: "EvenOverviewWidget")
             Task {
                 await DueDateNotificationScheduler.shared.reschedule()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave)) { _ in
+            WidgetCenter.shared.reloadTimelines(ofKind: "EvenOverviewWidget")
             Task {
                 await DueDateNotificationScheduler.shared.reschedule()
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange)) { _ in
+            guard !viewContext.hasChanges else { return }
+            PersistenceController.shared.refreshViewContextFromSharedStore()
         }
     }
 }

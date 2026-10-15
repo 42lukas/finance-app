@@ -34,7 +34,7 @@ enum FinanceBackupService {
 
     private static func makeBackupEntry(from item: Item) -> FinanceBackupEntry {
         FinanceBackupEntry(
-            id: UUID(),
+            id: item.id ?? UUID(),
             timestamp: item.timestamp,
             dueDate: item.dueDate,
             amount: item.amount,

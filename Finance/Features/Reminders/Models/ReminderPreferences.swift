@@ -41,25 +41,40 @@ enum ReminderPreferences {
     static let timeMinutesKey = "reminders.timeMinutes"
 
     static let defaultTimeMinutes = 18 * 60
+    private static let migrationKey = "reminders.sharedDefaultsMigrated"
+
+    static var storage: UserDefaults {
+        EvenSharedStore.sharedDefaults
+    }
 
     static func registerDefaults() {
-        UserDefaults.standard.register(defaults: [
+        storage.register(defaults: [
             notificationsEnabledKey: true,
             frequencyKey: ReminderFrequency.threeTimes.rawValue,
             timeMinutesKey: defaultTimeMinutes
         ])
+
+        guard !storage.bool(forKey: migrationKey) else { return }
+
+        let legacyDefaults = UserDefaults.standard
+        for key in [notificationsEnabledKey, frequencyKey, timeMinutesKey] {
+            if let value = legacyDefaults.object(forKey: key) {
+                storage.set(value, forKey: key)
+            }
+        }
+        storage.set(true, forKey: migrationKey)
     }
 
     static var notificationsEnabled: Bool {
-        UserDefaults.standard.bool(forKey: notificationsEnabledKey)
+        storage.bool(forKey: notificationsEnabledKey)
     }
 
     static var frequency: ReminderFrequency {
-        ReminderFrequency(rawValue: UserDefaults.standard.integer(forKey: frequencyKey)) ?? .threeTimes
+        ReminderFrequency(rawValue: storage.integer(forKey: frequencyKey)) ?? .threeTimes
     }
 
     static var timeMinutes: Int {
-        let storedValue = UserDefaults.standard.integer(forKey: timeMinutesKey)
+        let storedValue = storage.integer(forKey: timeMinutesKey)
         return min(max(storedValue, 0), (24 * 60) - 1)
     }
 }

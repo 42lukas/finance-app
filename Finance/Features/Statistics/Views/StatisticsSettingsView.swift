@@ -26,13 +26,13 @@ struct StatisticsSettingsView: View {
     @State private var infoMessage: String?
     @State private var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
 
-    @AppStorage(ReminderPreferences.notificationsEnabledKey)
+    @AppStorage(ReminderPreferences.notificationsEnabledKey, store: ReminderPreferences.storage)
     private var notificationsEnabled: Bool = true
 
-    @AppStorage(ReminderPreferences.frequencyKey)
+    @AppStorage(ReminderPreferences.frequencyKey, store: ReminderPreferences.storage)
     private var reminderFrequencyRawValue: Int = ReminderFrequency.threeTimes.rawValue
 
-    @AppStorage(ReminderPreferences.timeMinutesKey)
+    @AppStorage(ReminderPreferences.timeMinutesKey, store: ReminderPreferences.storage)
     private var reminderTimeMinutes: Int = ReminderPreferences.defaultTimeMinutes
 
     var body: some View {
