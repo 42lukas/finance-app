@@ -43,7 +43,7 @@
 		FA7D2B932D3C0FFE00015483 /* Finance.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Finance.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E10000000000000000000001 /* EvenWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = EvenWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E20000000000000000000001 /* EvenSharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Infrastructure/EvenSharedStore.swift; sourceTree = SOURCE_ROOT; };
-		E20000000000000000000002 /* PartialPayment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Views/Models/PartialPayment.swift; sourceTree = SOURCE_ROOT; };
+		E20000000000000000000002 /* PartialPayment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Features/Debts/Models/PartialPayment.swift; sourceTree = SOURCE_ROOT; };
 		E20000000000000000000003 /* ItemPaymentState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Features/Debts/Models/ItemPaymentState.swift; sourceTree = SOURCE_ROOT; };
 		E20000000000000000000004 /* Finance.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.xcdatamodeld"; path = Finance/Finance.xcdatamodeld; sourceTree = SOURCE_ROOT; };
 		E2000000000000000000000A /* DebtArchiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finance/Features/Archive/Services/DebtArchiveService.swift; sourceTree = SOURCE_ROOT; };
@@ -85,7 +85,7 @@
 			children = (
 				FA7D2B952D3C0FFE00015483 /* Finance */,
 				E10000000000000000000002 /* EvenWidget */,
-				E20000000000000000000005 /* Shared Widget Sources */,
+				E20000000000000000000005 /* Widget Shared Dependencies */,
 				FA7D2B942D3C0FFE00015483 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -99,7 +99,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		E20000000000000000000005 /* Shared Widget Sources */ = {
+		E20000000000000000000005 /* Widget Shared Dependencies */ = {
 			isa = PBXGroup;
 			children = (
 				E20000000000000000000001 /* EvenSharedStore.swift */,
@@ -108,7 +108,7 @@
 				E2000000000000000000000A /* DebtArchiveService.swift */,
 				E20000000000000000000004 /* Finance.xcdatamodeld */,
 			);
-			name = "Shared Widget Sources";
+			name = "Widget Shared Dependencies";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -374,7 +374,6 @@
 				CODE_SIGN_ENTITLEMENTS = Finance/Finance.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Finance/Preview Content\"";
 				DEVELOPMENT_LANGUAGE = de;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
@@ -408,7 +407,6 @@
 				CODE_SIGN_ENTITLEMENTS = Finance/Finance.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Finance/Preview Content\"";
 				DEVELOPMENT_LANGUAGE = de;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;

@@ -1,5 +1,5 @@
 //
-//  StatisticsDataManagementView.swift
+//  DataManagementView.swift
 //  Finance
 //
 //
@@ -7,7 +7,7 @@
 import SwiftUI
 import CoreData
 
-struct StatisticsDataManagementView: View {
+struct DataManagementView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
 

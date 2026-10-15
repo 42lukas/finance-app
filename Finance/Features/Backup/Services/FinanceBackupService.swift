@@ -29,7 +29,7 @@ enum FinanceBackupService {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "de_DE")
         formatter.dateFormat = "yyyy-MM-dd_HH-mm"
-        return "finance-backup-\(formatter.string(from: date)).json"
+        return "even-backup-\(formatter.string(from: date)).json"
     }
 
     private static func makeBackupEntry(from item: Item) -> FinanceBackupEntry {

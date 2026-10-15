@@ -1,5 +1,5 @@
 //
-//  StatisticsSettingsView.swift
+//  SettingsView.swift
 //  Finance
 //
 //
@@ -9,7 +9,7 @@ import CoreData
 import UserNotifications
 import UIKit
 
-struct StatisticsSettingsView: View {
+struct SettingsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
@@ -38,13 +38,13 @@ struct StatisticsSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                StatisticsSectionCard(title: "Darstellung", subtitle: "System, Hell oder Dunkel") {
+                AppSectionCard(title: "Darstellung", subtitle: "System, Hell oder Dunkel") {
                     AppThemePickerView(selectedTheme: $themeManager.selectedTheme)
                 }
 
                 reminderSettingsCard
 
-                StatisticsSectionCard(title: "Backup", subtitle: "JSON lokal in Dateien sichern") {
+                AppSectionCard(title: "Backup", subtitle: "JSON lokal in Dateien sichern") {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("\(items.count) Einträge werden in eine JSON-Datei exportiert.", systemImage: "doc.text.fill")
                             .font(.subheadline)
@@ -53,7 +53,7 @@ struct StatisticsSettingsView: View {
                         Button {
                             exportBackup()
                         } label: {
-                            Label("Backup laden", systemImage: "square.and.arrow.down.fill")
+                            Label("Backup exportieren", systemImage: "square.and.arrow.up.fill")
                                 .font(.subheadline.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
@@ -65,11 +65,11 @@ struct StatisticsSettingsView: View {
                     }
                 }
 
-                StatisticsSectionCard(title: "Daten", subtitle: "Archivierte Statistikdaten verwalten") {
+                AppSectionCard(title: "Daten", subtitle: "Einträge endgültig löschen") {
                     NavigationLink {
-                        StatisticsDataManagementView()
+                        DataManagementView()
                     } label: {
-                        Label("Statistik-Daten verwalten", systemImage: "archivebox.fill")
+                        Label("Daten verwalten", systemImage: "archivebox.fill")
                             .font(.subheadline.weight(.semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
@@ -131,7 +131,7 @@ struct StatisticsSettingsView: View {
     }
 
     private var reminderSettingsCard: some View {
-        StatisticsSectionCard(
+        AppSectionCard(
             title: "Fälligkeitserinnerungen",
             subtitle: "Zeitpunkt und Häufigkeit für alle Einträge"
         ) {

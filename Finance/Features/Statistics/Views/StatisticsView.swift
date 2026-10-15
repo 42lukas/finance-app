@@ -70,7 +70,7 @@ struct StatisticsView: View {
     }
 
     private var balanceSection: some View {
-        StatisticsSectionCard(
+        AppSectionCard(
             title: "Bilanz",
             subtitle: "Gesamte Historie inklusive Archiv"
         ) {
@@ -141,7 +141,7 @@ struct StatisticsView: View {
         let points = cumulativePoints
         let trendColor = balanceColor(for: historicalNetAmount)
 
-        return StatisticsSectionCard(
+        return AppSectionCard(
             title: "Gesamtwert über Zeit",
             subtitle: "Kumulative Bilanz seit Beginn • inklusive Archiv"
         ) {
@@ -232,7 +232,7 @@ struct StatisticsView: View {
         let people = Array(snapshot.topPeopleByEntries.prefix(3))
         let maximum = max(people.map { Double($0.entries) }.max() ?? 0, 1)
 
-        return StatisticsSectionCard(
+        return AppSectionCard(
             title: "Am häufigsten",
             subtitle: "Anzahl aller Einträge • inklusive Archiv"
         ) {
@@ -277,7 +277,7 @@ struct StatisticsView: View {
     }
 
     private var openDebtsSection: some View {
-        StatisticsSectionCard(
+        AppSectionCard(
             title: "Offene Schulden",
             subtitle: "Nur aktive Beträge, die du noch schuldest"
         ) {
@@ -320,7 +320,7 @@ struct StatisticsView: View {
     private var paymentProgressSection: some View {
         let remaining = max(snapshot.summary.totalAmount - snapshot.summary.paidAmount, 0)
 
-        return StatisticsSectionCard(
+        return AppSectionCard(
             title: "Bezahlt",
             subtitle: "Gesamtes Volumen inklusive Archiv"
         ) {
@@ -352,7 +352,7 @@ struct StatisticsView: View {
     }
 
     private var emptyState: some View {
-        StatisticsSectionCard(title: "Noch keine Statistik") {
+        AppSectionCard(title: "Noch keine Statistik") {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Füge zuerst einige Schulden oder Forderungen hinzu.", systemImage: "plus.circle")
                 Text("Danach erscheinen hier Gesamtbilanz, Verlauf und Zahlungsfortschritt.")

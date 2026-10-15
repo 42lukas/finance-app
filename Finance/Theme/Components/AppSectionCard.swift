@@ -1,34 +1,12 @@
 //
-//  StatisticsCards.swift
+//  AppSectionCard.swift
 //  Finance
 //
 //
 
 import SwiftUI
 
-struct StatisticsMetricCard: View {
-    let title: String
-    let value: String
-    let systemImage: String
-    let color: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: systemImage)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(.primary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(color.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-}
-
-struct StatisticsSectionCard<Content: View>: View {
+struct AppSectionCard<Content: View>: View {
     let title: String
     let subtitle: String?
     let content: Content

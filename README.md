@@ -1,175 +1,163 @@
-# Finance
+# Even
 
-Private iOS-App zum Verwalten von Schulden und Forderungen im Freundes- und Familienkreis.
-
-Die App fokussiert sich auf:
-- schnelle Erfassung von Einträgen
-- saubere Verwaltung von Teilzahlungen
-- aussagekräftige Statistiken
+Even ist eine private iOS-App zum Verwalten von Schulden und Forderungen im Freundes- und Familienkreis. Alle Daten bleiben lokal auf dem Gerät. Ein Home-Screen-Widget greift über eine gemeinsame App Group auf denselben Core-Data-Speicher zu.
 
 ## Funktionen
 
-### 1) Schulden- und Forderungsverwaltung
+### Schulden und Forderungen
+
 - Einträge für `schulde ich` und `bekomme ich`
-- Betragserfassung über Schrittweiten (`0,01`, `0,10`, `1,00`, `10,00` EUR)
-- manueller Betrag per Long-Press auf den Betragswert
-- moderner Eintrag-Dialog mit klarer Kartenstruktur
-- Namens-Autocompletion im Personenfeld basierend auf bestehenden Einträgen (Prefix-Matching, z. B. `Er` -> `Eric`)
-- Beschreibung/Grund pro Eintrag
+- Person, Grund, Betrag und Erstellungszeitpunkt
+- optionales Fälligkeitsdatum
+- Swipe nach rechts zum Bearbeiten
+- Swipe nach links zum Archivieren
+- aktuelle Summen für offene Schulden und Forderungen
 
-### 2) Listen-Interaktion
-- Swipe nach rechts: Betrag bearbeiten
-- Swipe nach links: Eintrag archivieren (Soft Delete)
-- archivierte Einträge verschwinden aus der Schuldenliste, bleiben aber für Statistiken erhalten
+### Teilzahlungen
 
-### 3) Teilzahlungen
-- pro Eintrag beliebig viele Teilzahlungen
-- Übersicht direkt im Listenelement:
-  - Gesamt
-  - bereits bezahlt
-  - offen
-- Teilzahlungen nur über den Button `Teilzahlung hinzufügen`
-- optionale kurze Notiz pro Teilzahlung über ein Notiz-Icon in der Historie
-- Teilzahlungshistorie mit Datum/Uhrzeit pro Zahlung
-- Ausklappen der Historie nur über Chevron-Button
-- visuelles „Komplett bezahlt“-Banner, wenn offen = 0
+- beliebig viele Teilzahlungen pro Eintrag
+- optionale Notiz und Zeitstempel pro Zahlung
+- Bearbeiten und Löschen bestehender Teilzahlungen
+- Fortschrittsanzeige für bezahlt und offen
+- vollständig bezahlte Einträge bleiben nachvollziehbar
 
-### 4) Statistik-Tab
-- Zeitraum-Umschaltung: `Monat`, `Jahr`, `All Time`
-- Kennzahlen:
-  - Anzahl Einträge
-  - Gesamtvolumen
-  - Ich schulde
-  - Ich bekomme
-  - Durchschnitt
-  - Anzahl Personen
-- Cluster/Insights:
-  - häufigste Person
-  - größte Volumen-Person
-  - Konzentrationsindex (Top-3)
-  - vollständig bezahlte Einträge
-- Charts:
-  - Zeitverlauf (Ich schulde vs. Ich bekomme)
-  - Top-Personen
-  - Wochentagsmuster
+### Archiv
 
-### 5) Statistik-Datenbereinigung (Hard Delete)
-- eigener Bereich im Statistik-Tab: `Statistik-Daten bereinigen`
-- einzelnes endgültiges Löschen von Einträgen
-- optional: alle archivierten Einträge endgültig löschen
-- endgültig gelöschte Einträge werden auch aus Statistiken entfernt
+- archivierte Einträge werden aus der aktiven Übersicht ausgeblendet
+- Wiederherstellung aus dem Archiv
+- Rückgängig-Aktion direkt nach dem Archivieren
+- bei einer Widget-Erledigung kann auch die automatisch erzeugte Abschlusszahlung zurückgenommen werden
+- endgültiges Löschen über die Datenverwaltung
 
-### 6) JSON-Backup
-- Einstellungen im Statistik-Tab über den Gear-Button
-- Aktion `Backup laden` erstellt ein JSON-Backup aller Einträge
-- Speichern direkt über die iOS-Dateienauswahl (Dateien-App)
+### Fälligkeitserinnerungen
 
-### 7) Dark Mode / Appearance
-- globales Theme-System: `System`, `Hell`, `Dunkel`
-- umschaltbar in den Einstellungen im Statistik-Tab
-- Auswahl wirkt app-weit und gilt auch für neue Views
+- Erinnerungen basieren auf dem Fälligkeitsdatum
+- wählbar sind eine, drei oder fünf Erinnerungen
+- frei wählbare Uhrzeit, standardmäßig 18:00 Uhr
+- mehrere Einträge mit demselben Fälligkeitsdatum werden gebündelt
+- erledigte oder archivierte Einträge werden nicht weiter erinnert
+- bei deaktivierten Mitteilungsvorschauen zeigt der Sperrbildschirm nur einen neutralen Hinweis
 
-### 8) Erinnerungen
-- Benachrichtigungsberechtigung beim App-Start
-- wiederkehrende Erinnerung um 20:00 Uhr (falls erlaubt)
+Für geschützte Vorschauen auf dem iPhone:
 
-## Tech Stack
+`Einstellungen → Mitteilungen → Even → Vorschauen zeigen → Wenn entsperrt`
+
+### Statistiken
+
+Die Statistiken beziehen archivierte Einträge in historische Gesamtwerte ein und zeigen:
+
+- Gesamtbilanz aus Forderungen minus Schulden
+- aktuell offenen Gesamtwert
+- kumulative Bilanz über die Zeit
+- am häufigsten auftretende Personen
+- älteste und größte offene Schuld
+- bezahlten Anteil am Gesamtvolumen mit Fortschritt und Prozentwert
+
+### Widget
+
+Even stellt kleine und mittlere Home-Screen-Widgets bereit:
+
+- aktueller Saldo
+- Gesamtsummen für Schulden und Forderungen
+- Eintrag mit der nächsten Fälligkeit
+- offener Betrag und Fälligkeitsstatus
+- direktes Erledigen und automatisches Archivieren eines Eintrags
+
+### Backup und Darstellung
+
+- JSON-Export aller aktiven und archivierten Einträge
+- System-, Hell- und Dunkelmodus
+- keine Cloud-Synchronisation und kein externer Serverzugriff
+
+Der aktuelle Backup-Stand unterstützt den Export. Eine Wiederherstellung aus einer JSON-Datei ist noch nicht implementiert.
+
+## Technischer Aufbau
+
 - Swift 5
 - SwiftUI
 - Core Data
+- WidgetKit und App Intents
 - Charts
 - UserNotifications
+- Deployment Target: iOS 17.6
+- sichtbarer App-Name und Version: Even 2.0
+- Release Bundle Identifier: `com.lukas42.finance`
 
-## Voraussetzungen
-- Xcode 16+
-- iOS Deployment Target: `17.6`
-- Bundle Identifier: `com.example.finance`
-
-## Projekt lokal starten
-
-1. Repository öffnen:
-   - `Finance.xcodeproj`
-2. In Xcode ein iPhone-Simulator oder Gerät wählen
-3. Build & Run (`Cmd + R`)
-
-## Nutzung
-
-### Eintrag erstellen
-1. Im Tab `Schulden` auf `+` tippen
-2. Betrag wählen (Buttons oder Long-Press + manuelle Eingabe)
-3. Person und Beschreibung eingeben
-4. Kategorie wählen (`schulde ich` / `bekomme ich`)
-5. `Eintrag speichern`
-
-### Teilzahlung erfassen
-1. Eintrag in der Liste öffnen
-2. `Teilzahlung hinzufügen` tippen
-3. Betrag eingeben und speichern
-
-### Eintrag bearbeiten/archivieren
-- Bearbeiten: Swipe nach rechts
-- Archivieren: Swipe nach links
-
-### Statistik ansehen
-1. In `Statistiken` wechseln
-2. Zeitraum auswählen
-3. Kennzahlen und Charts analysieren
-
-### Daten endgültig löschen
-1. In `Statistiken` auf `Statistik-Daten bereinigen`
-2. Einträge einzeln oder archivierte gesammelt endgültig löschen
-
-### JSON-Backup speichern
-1. In `Statistiken` auf das Einstellungen-Symbol tippen
-2. `Backup laden` wählen
-3. Speicherort in der Dateien-App auswählen und sichern
-
-## Datenmodell (Core Data)
-Entity: `Item`
-- `timestamp: Date`
-- `amount: Double`
-- `category: String`
-- `person: String`
-- `descriptionText: String`
-- `isArchived: Bool`
-- `paidAmount: Double`
-- `partialPaymentsData: Binary` (JSON-codierte Teilzahlungen)
+Die internen Namen `Finance`, `Finance.sqlite` und `group.com.lukas42.finance` bleiben aus Kompatibilitätsgründen bestehen. Sie sichern Updates und den Zugriff auf vorhandene TestFlight-Daten.
 
 ## Projektstruktur
 
 ```text
 Finance/
+├── App/
+│   ├── ContentView.swift
+│   └── FinanceApp.swift
 ├── Features/
+│   ├── Archive/
+│   │   ├── Models/
+│   │   ├── Services/
+│   │   └── Views/
 │   ├── Backup/
 │   │   ├── Models/
-│   │   │   └── FinanceBackupModels.swift
 │   │   └── Services/
-│   │       └── FinanceBackupService.swift
+│   ├── Debts/
+│   │   ├── Models/
+│   │   └── Views/
+│   │       └── Components/
+│   ├── Reminders/
+│   │   ├── Models/
+│   │   ├── Services/
+│   │   └── Views/
+│   ├── Settings/
+│   │   └── Views/
 │   └── Statistics/
 │       ├── Models/
-│       │   └── StatisticsModels.swift
 │       ├── Services/
-│       │   └── StatisticsCalculator.swift
 │       └── Views/
-│           ├── Components/
-│           │   └── StatisticsCards.swift
-│           ├── StatisticsDataManagementView.swift
-│           ├── StatisticsSettingsView.swift
-│           └── StatisticsView.swift
-├── Views/
-│   ├── DebtsView.swift
-│   └── SheetView.swift
-├── ContentView.swift
-├── FinanceApp.swift
-├── Persistence.swift
+├── Infrastructure/
+│   ├── EvenSharedStore.swift
+│   └── PersistenceController.swift
+├── Theme/
+│   ├── AppTheme.swift
+│   └── Components/
+├── Assets.xcassets/
+├── Finance.entitlements
 └── Finance.xcdatamodeld/
+
+EvenWidget/
+├── EvenOverviewWidget.swift
+├── EvenWidgetBundle.swift
+└── EvenWidget.entitlements
 ```
 
-## Datenschutz
-- Alle Daten werden lokal in Core Data gespeichert.
-- Keine Cloud-Synchronisation und kein externer Serverzugriff durch die App-Logik.
+### Widget Shared Dependencies
 
-## Roadmap-Ideen
-- Filter und Suche in der Schuldenliste
-- FaceID/Passcode-Schutz
-- Wiederkehrende Einträge
+Diese Gruppe im Xcode-Navigator ist ein virtueller Satz von Dateiverweisen und kein zusätzlicher Ordner. Die Dateien liegen weiterhin unter `Finance/`, werden aber auch in die separate Widget Extension kompiliert. Dazu gehören der gemeinsame Store-Zugriff, Zahlungsmodell und -berechnung, Archivservice sowie das Core-Data-Modell.
+
+Die Einträge sind keine Dateikopien und dürfen nicht ohne Ersatz aus dem Widget-Target entfernt werden.
+
+### Core-Data-Versionen
+
+`Finance.xcdatamodeld` enthält die Modellstände `Finance` bis `Finance 4`. Dabei handelt es sich nicht um vier Nutzerdatenbanken, sondern um Schema-Versionen für automatische Migrationen:
+
+- `Finance`: ursprüngliches Modell
+- `Finance 2`: Fälligkeitsdatum
+- `Finance 3`: stabile Eintrags-ID
+- `Finance 4`: Archivmetadaten und Widget-Wiederherstellung
+
+`Finance 4` ist das aktuelle Modell. Die älteren Versionen bleiben enthalten, damit Installationen früherer App-Versionen ihre bestehenden Daten weiterhin öffnen und migrieren können.
+
+## Projekt starten
+
+1. `Finance.xcodeproj` in Xcode öffnen.
+2. Ein iPhone, iPad oder einen Simulator auswählen.
+3. Das Scheme `Finance` starten (`Cmd + R`).
+
+Für das Widget müssen App und Widget Extension dieselbe App Group verwenden. Auf einem neuen Gerät sollte Even mindestens einmal geöffnet werden, bevor das Widget Daten anzeigt.
+
+## Datenschutz
+
+- Einträge werden lokal in Core Data gespeichert.
+- App und Widget teilen den Store ausschließlich über die konfigurierte App Group.
+- Es gibt keine Netzwerk- oder Cloud-Synchronisation in der App-Logik.
+- JSON-Backups werden nur auf ausdrückliche Nutzeraktion über die Dateienauswahl exportiert.
