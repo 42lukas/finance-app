@@ -208,7 +208,7 @@ actor DueDateNotificationScheduler {
         }
 
         let amountAndPerson: String
-        if entry.category == DebtEntryCategory.iOwe.rawValue {
+        if entry.category == "schulde ich" {
             amountAndPerson = "Du schuldest \(currency(entry.remainingAmount)) an \(entry.person)."
         } else {
             amountAndPerson = "Du bekommst \(currency(entry.remainingAmount)) von \(entry.person)."

@@ -6,7 +6,5 @@
 	<array>
 		<string>group.com.lukas42.finance</string>
 	</array>
-	<key>com.apple.developer.siri</key>
-	<true/>
 </dict>
 </plist>

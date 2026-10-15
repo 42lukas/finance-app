@@ -6,7 +6,6 @@ Die App fokussiert sich auf:
 - schnelle Erfassung von Einträgen
 - saubere Verwaltung von Teilzahlungen
 - aussagekräftige Statistiken
-- Siri-Shortcuts zum sprachgesteuerten Anlegen von Einträgen
 
 ## Funktionen
 
@@ -70,15 +69,7 @@ Die App fokussiert sich auf:
 - umschaltbar in den Einstellungen im Statistik-Tab
 - Auswahl wirkt app-weit und gilt auch für neue Views
 
-### 8) Siri / App Intents
-- AppIntents für schnelles Anlegen per Siri/Shortcuts:
-  - `Schuldeneintrag (Ich schulde)`
-  - `Schuldeneintrag (Ich bekomme)`
-- Beispiel-Phrasen:
-  - „Ich schulde in Finance"
-  - „Ich bekomme in Finance"
-
-### 9) Erinnerungen
+### 8) Erinnerungen
 - Benachrichtigungsberechtigung beim App-Start
 - wiederkehrende Erinnerung um 20:00 Uhr (falls erlaubt)
 
@@ -87,7 +78,6 @@ Die App fokussiert sich auf:
 - SwiftUI
 - Core Data
 - Charts
-- AppIntents (Siri/Shortcuts)
 - UserNotifications
 
 ## Voraussetzungen
@@ -149,13 +139,7 @@ Entity: `Item`
 
 ```text
 Finance/
-├── AppIntents/
-│   ├── AddDebtEntryIntents.swift
-│   └── FinanceAppShortcuts.swift
 ├── Features/
-│   ├── Debts/
-│   │   └── Services/
-│   │       └── DebtEntryCreationService.swift
 │   ├── Backup/
 │   │   ├── Models/
 │   │   │   └── FinanceBackupModels.swift
@@ -184,14 +168,6 @@ Finance/
 ## Datenschutz
 - Alle Daten werden lokal in Core Data gespeichert.
 - Keine Cloud-Synchronisation und kein externer Serverzugriff durch die App-Logik.
-
-## Troubleshooting
-
-### Siri sagt „App unterstützt diesen Vorgang nicht"
-- Sicherstellen, dass die aktuelle Build-Version mit aktivierten AppIntents installiert ist
-- App mindestens einmal manuell öffnen
-- In der Kurzbefehle-App prüfen, ob `Finance`-Shortcuts verfügbar sind
-- Siri in iOS aktiviert lassen und Gerät neu starten, falls Shortcuts nicht sofort erscheinen
 
 ## Roadmap-Ideen
 - Filter und Suche in der Schuldenliste

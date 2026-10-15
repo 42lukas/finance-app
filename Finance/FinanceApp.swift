@@ -6,7 +6,6 @@
 
 import SwiftUI
 import UserNotifications
-import AppIntents
 
 @main
 struct FinanceApp: App {
@@ -16,7 +15,6 @@ struct FinanceApp: App {
 
     init() {
         ReminderPreferences.registerDefaults()
-        FinanceAppShortcuts.updateAppShortcutParameters()
     }
 
     var body: some Scene {
