@@ -277,9 +277,10 @@ private actor WidgetStore {
                     else { continue }
 
                     let content = UNMutableNotificationContent()
-                    content.title = reminderTitle(for: offset)
-                    content.body = reminderBody(for: items)
+                    content.title = "Even-Erinnerung"
+                    content.body = "\(reminderTitle(for: offset)): \(reminderBody(for: items))"
                     content.sound = .default
+                    content.categoryIdentifier = "even.due.reminder"
 
                     let dueKey = dateKey(for: dueDay, calendar: calendar)
                     content.threadIdentifier = "even.due.\(dueKey)"

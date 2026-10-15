@@ -19,8 +19,24 @@ private struct DueReminderPlan: Sendable {
     let identifier: String
     let fireDate: Date
     let dueDateKey: String
-    let title: String
     let body: String
+}
+
+enum DueDateNotificationPresentation {
+    static let categoryIdentifier = "even.due.reminder"
+    static let title = "Even-Erinnerung"
+    static let hiddenPreviewBody = "Eine Fälligkeit steht an."
+
+    static func register(in notificationCenter: UNUserNotificationCenter = .current()) {
+        let category = UNNotificationCategory(
+            identifier: categoryIdentifier,
+            actions: [],
+            intentIdentifiers: [],
+            hiddenPreviewsBodyPlaceholder: hiddenPreviewBody,
+            options: []
+        )
+        notificationCenter.setNotificationCategories([category])
+    }
 }
 
 actor DueDateNotificationScheduler {
@@ -72,9 +88,10 @@ actor DueDateNotificationScheduler {
         // Keep headroom for other local notifications and prioritize the next reminders.
         for plan in plans.sorted(by: { $0.fireDate < $1.fireDate }).prefix(60) {
             let content = UNMutableNotificationContent()
-            content.title = plan.title
+            content.title = DueDateNotificationPresentation.title
             content.body = plan.body
             content.sound = .default
+            content.categoryIdentifier = DueDateNotificationPresentation.categoryIdentifier
             content.threadIdentifier = "\(Self.identifierPrefix)\(plan.dueDateKey)"
             content.userInfo = ["dueDate": plan.dueDateKey]
 
@@ -168,43 +185,39 @@ actor DueDateNotificationScheduler {
 
                 let dueDateKey = Self.dateKey(for: dueDay, calendar: calendar)
                 let identifier = "\(Self.identifierPrefix)\(dueDateKey).days-\(dayOffset)"
-                let content = notificationContent(for: entriesForDay, dayOffset: dayOffset)
+                let body = notificationBody(for: entriesForDay, dayOffset: dayOffset)
 
                 return DueReminderPlan(
                     identifier: identifier,
                     fireDate: fireDate,
                     dueDateKey: dueDateKey,
-                    title: content.title,
-                    body: content.body
+                    body: body
                 )
             }
         }
     }
 
-    private func notificationContent(
+    private func notificationBody(
         for entries: [DueReminderEntry],
         dayOffset: Int
-    ) -> (title: String, body: String) {
-        let title: String
+    ) -> String {
+        let timing: String
         switch dayOffset {
         case 0:
-            title = "Heute fällig"
+            timing = "Heute fällig"
         case 1:
-            title = "Morgen fällig"
+            timing = "Morgen fällig"
         case 7:
-            title = "In einer Woche fällig"
+            timing = "In einer Woche fällig"
         case 14:
-            title = "In zwei Wochen fällig"
+            timing = "In zwei Wochen fällig"
         default:
-            title = "In \(dayOffset) Tagen fällig"
+            timing = "In \(dayOffset) Tagen fällig"
         }
 
         guard let entry = entries.first, entries.count == 1 else {
             let total = entries.reduce(0) { $0 + $1.remainingAmount }
-            return (
-                title,
-                "\(entries.count) offene Einträge über insgesamt \(currency(total)) werden fällig."
-            )
+            return "\(timing): \(entries.count) offene Einträge über insgesamt \(currency(total)) werden fällig."
         }
 
         let amountAndPerson: String
@@ -215,9 +228,9 @@ actor DueDateNotificationScheduler {
         }
 
         guard !entry.reason.isEmpty else {
-            return (title, amountAndPerson)
+            return "\(timing): \(amountAndPerson)"
         }
-        return (title, "\(amountAndPerson) Grund: \(entry.reason)")
+        return "\(timing): \(amountAndPerson) Grund: \(entry.reason)"
     }
 
     private func removePendingDueDateNotifications() async {
